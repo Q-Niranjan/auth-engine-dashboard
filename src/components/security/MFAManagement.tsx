@@ -1,0 +1,248 @@
+"use client";
+
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiClient } from "@/lib/api-client";
+import { toast } from "sonner";
+import {
+    ShieldCheck,
+    ShieldAlert,
+    Loader2,
+    QrCode,
+    CheckCircle2,
+    XCircle,
+    Smartphone
+} from "lucide-react";
+
+import { Button } from "@/components/ui/button";
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardFooter,
+    CardHeader,
+    CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { useAuthStore } from "@/stores/auth-store";
+
+export default function MFAManagement() {
+    const queryClient = useQueryClient();
+    const { user, setUser } = useAuthStore();
+    const [isEnrolling, setIsEnrolling] = useState(false);
+    const [verificationCode, setVerificationCode] = useState("");
+    const [enrollData, setEnrollData] = useState<{
+        qr_code: string;
+        secret: string;
+        uri: string;
+    } | null>(null);
+
+    // 1. Fetch MFA status
+    const { data: mfaStatus, isLoading: isLoadingStatus } = useQuery({
+        queryKey: ["mfaStatus"],
+        queryFn: async () => {
+            const { data } = await apiClient.get("/me/mfa/status");
+            return data;
+        },
+    });
+
+    // 2. Start Enrollment
+    const enrollMutation = useMutation({
+        mutationFn: async () => {
+            const { data } = await apiClient.post("/me/mfa/enroll");
+            return data;
+        },
+        onSuccess: (data) => {
+            setEnrollData(data);
+            setIsEnrolling(true);
+        },
+        onError: (error: any) => {
+            toast.error(error.response?.data?.detail || "Failed to start MFA enrollment");
+        },
+    });
+
+    // 3. Verify Enrollment
+    const verifyMutation = useMutation({
+        mutationFn: async (code: string) => {
+            const { data } = await apiClient.post("/me/mfa/verify", { code });
+            return data;
+        },
+        onSuccess: () => {
+            toast.success("MFA successfully enabled!");
+            setIsEnrolling(false);
+            setEnrollData(null);
+            setVerificationCode("");
+            queryClient.invalidateQueries({ queryKey: ["mfaStatus"] });
+            queryClient.invalidateQueries({ queryKey: ["verifyUser"] });
+        },
+        onError: (error: any) => {
+            toast.error(error.response?.data?.detail || "Invalid verification code");
+        },
+    });
+
+    // 4. Disable MFA
+    const disableMutation = useMutation({
+        mutationFn: async (code: string) => {
+            const { data } = await apiClient.delete("/me/mfa/disable", { data: { code } });
+            return data;
+        },
+        onSuccess: () => {
+            toast.success("MFA successfully disabled");
+            queryClient.invalidateQueries({ queryKey: ["mfaStatus"] });
+            queryClient.invalidateQueries({ queryKey: ["verifyUser"] });
+        },
+        onError: (error: any) => {
+            toast.error(error.response?.data?.detail || "Failed to disable MFA. Check your code.");
+        },
+    });
+
+    if (isLoadingStatus) {
+        return (
+            <Card>
+                <CardContent className="py-10 flex justify-center">
+                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                </CardContent>
+            </Card>
+        );
+    }
+
+    const mfaEnabled = mfaStatus?.mfa_enabled || user?.mfa_enabled;
+
+    return (
+        <div className="space-y-6">
+            <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0">
+                    <div className="space-y-1">
+                        <CardTitle>Two-Factor Authentication (TOTP)</CardTitle>
+                        <CardDescription>
+                            Protect your account by requiring an additional code from an authenticator app.
+                        </CardDescription>
+                    </div>
+                    <Badge variant={mfaEnabled ? "default" : "secondary"} className="h-6">
+                        {mfaEnabled ? (
+                            <span className="flex items-center gap-1">
+                                <ShieldCheck className="h-3 w-3" /> Enabled
+                            </span>
+                        ) : (
+                            <span className="flex items-center gap-1">
+                                <ShieldAlert className="h-3 w-3" /> Disabled
+                            </span>
+                        )}
+                    </Badge>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                    {!mfaEnabled && !isEnrolling && (
+                        <div className="flex flex-col items-center justify-center py-6 text-center space-y-4">
+                            <div className="p-4 bg-primary/10 rounded-full">
+                                <Smartphone className="h-10 w-10 text-primary" />
+                            </div>
+                            <div className="max-w-[400px] space-y-2">
+                                <p className="text-sm text-muted-foreground">
+                                    Using an authenticator app like Google Authenticator or Authy, you'll enter a 6-digit code during sign-in.
+                                </p>
+                                <Button
+                                    onClick={() => enrollMutation.mutate()}
+                                    disabled={enrollMutation.isPending}
+                                >
+                                    {enrollMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                    Enable 2FA
+                                </Button>
+                            </div>
+                        </div>
+                    )}
+
+                    {isEnrolling && enrollData && (
+                        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-300">
+                            <div className="grid md:grid-cols-2 gap-8 items-start">
+                                <div className="space-y-4">
+                                    <div className="space-y-2">
+                                        <h4 className="font-semibold text-sm">1. Scan QR Code</h4>
+                                        <p className="text-xs text-muted-foreground">
+                                            Scan this image with your authenticator app.
+                                        </p>
+                                    </div>
+                                    <div className="bg-white p-4 rounded-xl inline-block border-2 border-primary/20">
+                                        <img
+                                            src={`data:image/png;base64,${enrollData.qr_code}`}
+                                            alt="MFA QR Code"
+                                            className="w-48 h-48"
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <p className="text-xs font-mono bg-muted p-2 rounded truncate max-w-[200px]" title={enrollData.secret}>
+                                            Manual Code: {enrollData.secret}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-6">
+                                    <div className="space-y-2">
+                                        <h4 className="font-semibold text-sm">2. Verify Setup</h4>
+                                        <p className="text-xs text-muted-foreground">
+                                            Enter the 6-digit code shown in your app to confirm.
+                                        </p>
+                                    </div>
+                                    <div className="space-y-4">
+                                        <Input
+                                            placeholder="000000"
+                                            value={verificationCode}
+                                            onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                                            className="text-2xl tracking-[0.5em] text-center font-bold h-14"
+                                        />
+                                        <div className="flex gap-2">
+                                            <Button
+                                                className="flex-1"
+                                                onClick={() => verifyMutation.mutate(verificationCode)}
+                                                disabled={verifyMutation.isPending || verificationCode.length < 6}
+                                            >
+                                                {verifyMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                                Confirm & Enable
+                                            </Button>
+                                            <Button
+                                                variant="ghost"
+                                                onClick={() => {
+                                                    setIsEnrolling(false);
+                                                    setEnrollData(null);
+                                                }}
+                                            >
+                                                Cancel
+                                            </Button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {mfaEnabled && (
+                        <div className="bg-destructive/5 border border-destructive/20 rounded-lg p-4 space-y-4">
+                            <div className="space-y-1">
+                                <p className="text-sm font-semibold text-destructive">Disable Two-Factor Authentication</p>
+                                <p className="text-xs text-muted-foreground">
+                                    We strongly recommend keeping 2FA enabled to protect your account.
+                                </p>
+                            </div>
+                            <div className="flex gap-2 max-w-[300px]">
+                                <Input
+                                    placeholder="Verification Code"
+                                    className="text-center font-mono"
+                                    value={verificationCode}
+                                    onChange={(e) => setVerificationCode(e.target.value.slice(0, 6))}
+                                />
+                                <Button
+                                    variant="destructive"
+                                    onClick={() => disableMutation.mutate(verificationCode)}
+                                    disabled={disableMutation.isPending || verificationCode.length < 6}
+                                >
+                                    {disableMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                    Disable
+                                </Button>
+                            </div>
+                        </div>
+                    )}
+                </CardContent>
+            </Card>
+        </div>
+    );
+}

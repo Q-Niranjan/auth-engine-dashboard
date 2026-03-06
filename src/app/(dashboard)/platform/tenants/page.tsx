@@ -1,0 +1,340 @@
+"use client";
+
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiClient } from "@/lib/api-client";
+import {
+    Globe,
+    Check,
+    ChevronsUpDown,
+    User,
+    Plus,
+    Search,
+    MoreVertical,
+    ExternalLink,
+    Loader2,
+    Trash2
+} from "lucide-react";
+
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "@/components/ui/table";
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
+} from "@/components/ui/card";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { toast } from "sonner";
+import { useState } from "react";
+import { cn } from "@/lib/utils";
+import Link from "next/link";
+
+export default function PlatformTenantsPage() {
+    const queryClient = useQueryClient();
+    const [isAdding, setIsAdding] = useState(false);
+    const [newTenant, setNewTenant] = useState({
+        name: "",
+        description: "",
+        type: "CUSTOMER",
+        owner_id: ""
+    });
+    const [userSearch, setUserSearch] = useState("");
+    const [selectedUser, setSelectedUser] = useState<any>(null);
+    const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
+
+    // 1. Fetch Tenants
+    const { data: tenants, isLoading } = useQuery({
+        queryKey: ["allTenants"],
+        queryFn: async () => {
+            const { data } = await apiClient.get("/platform/tenants");
+            return data;
+        },
+    });
+
+    // 2. Fetch Users for owner selection
+    const { data: users } = useQuery({
+        queryKey: ["platformUsers"],
+        queryFn: async () => {
+            const { data } = await apiClient.get("/platform/users");
+            return data;
+        },
+    });
+
+    const filteredUsers = users?.filter((u: any) =>
+        u.email.toLowerCase().includes(userSearch.toLowerCase()) ||
+        `${u.first_name} ${u.last_name}`.toLowerCase().includes(userSearch.toLowerCase()) ||
+        u.username?.toLowerCase().includes(userSearch.toLowerCase())
+    );
+
+    // 2. Create Tenant
+    const createMutation = useMutation({
+        mutationFn: async (payload: any) => {
+            await apiClient.post("/platform/tenants", payload);
+        },
+        onSuccess: () => {
+            toast.success("Organization created successfully");
+            setIsAdding(false);
+            setNewTenant({ name: "", description: "", type: "CUSTOMER", owner_id: "" });
+            setSelectedUser(null);
+            setUserSearch("");
+            queryClient.invalidateQueries({ queryKey: ["allTenants"] });
+        },
+        onError: (error: any) => {
+            toast.error(error.response?.data?.detail || "Failed to create organization");
+        }
+    });
+
+    return (
+        <div className="space-y-6">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div>
+                    <h1 className="text-3xl font-bold tracking-tight">Tenants Directory</h1>
+                    <p className="text-muted-foreground mt-1">
+                        Manage all organizations hosted on this platform.
+                    </p>
+                </div>
+
+                <Dialog open={isAdding} onOpenChange={setIsAdding}>
+                    <DialogTrigger asChild>
+                        <Button className="rounded-xl shadow-lg shadow-foreground/20 bg-foreground text-background hover:bg-foreground/90">
+                            <Plus className="mr-2 h-4 w-4" /> New Organization
+                        </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle>Create New Tenant</DialogTitle>
+                            <DialogDescription>
+                                Add a new organization to your platform.
+                            </DialogDescription>
+                        </DialogHeader>
+                        <div className="grid gap-4 py-4">
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium">Organization Name</label>
+                                <Input
+                                    placeholder="Acme Corp"
+                                    value={newTenant.name}
+                                    onChange={(e) => setNewTenant({ ...newTenant, name: e.target.value })}
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium">Description</label>
+                                <Input
+                                    placeholder="A brief description of this organization"
+                                    value={newTenant.description}
+                                    onChange={(e) => setNewTenant({ ...newTenant, description: e.target.value })}
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium">Tenant Type</label>
+                                <select
+                                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                                    value={newTenant.type}
+                                    onChange={(e) => setNewTenant({ ...newTenant, type: e.target.value })}
+                                >
+                                    <option value="CUSTOMER">Customer</option>
+                                    <option value="PLATFORM">Platform</option>
+                                </select>
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium">Organization Owner</label>
+                                <DropdownMenu open={isUserDropdownOpen} onOpenChange={setIsUserDropdownOpen}>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button variant="outline" className="w-full justify-between font-normal h-10">
+                                            {selectedUser ? (
+                                                <span className="truncate">
+                                                    {selectedUser.first_name} {selectedUser.last_name} ({selectedUser.email})
+                                                </span>
+                                            ) : (
+                                                <span className="text-muted-foreground">Select a platform user...</span>
+                                            )}
+                                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent className="w-[380px] p-0" align="start">
+                                        <div className="p-2 border-b">
+                                            <div className="relative">
+                                                <Search className="absolute left-2 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
+                                                <Input
+                                                    placeholder="Search users by name or email..."
+                                                    value={userSearch}
+                                                    onChange={(e) => setUserSearch(e.target.value)}
+                                                    className="pl-8 h-9 text-xs"
+                                                />
+                                            </div>
+                                        </div>
+                                        <div className="max-h-[240px] overflow-y-auto p-1">
+                                            {filteredUsers?.map((user: any) => (
+                                                <DropdownMenuItem
+                                                    key={user.id}
+                                                    onSelect={() => {
+                                                        setSelectedUser(user);
+                                                        setNewTenant({ ...newTenant, owner_id: user.id });
+                                                        setIsUserDropdownOpen(false);
+                                                    }}
+                                                    className="flex items-center justify-between py-2 cursor-pointer"
+                                                >
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="h-7 w-7 rounded-full bg-muted flex items-center justify-center text-[10px] font-bold">
+                                                            {user.first_name?.charAt(0) || user.email.charAt(0).toUpperCase()}
+                                                        </div>
+                                                        <div className="flex flex-col">
+                                                            <span className="text-sm font-medium">
+                                                                {user.first_name} {user.last_name}
+                                                            </span>
+                                                            <span className="text-[10px] text-muted-foreground font-mono">
+                                                                {user.email}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                    {selectedUser?.id === user.id && (
+                                                        <Check className="h-4 w-4 text-primary" />
+                                                    )}
+                                                </DropdownMenuItem>
+                                            ))}
+                                            {filteredUsers?.length === 0 && (
+                                                <div className="py-6 text-center text-xs text-muted-foreground">
+                                                    No users found.
+                                                </div>
+                                            )}
+                                        </div>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                                <p className="text-[10px] text-muted-foreground italic">
+                                    The selected user will be granted the TENANT_OWNER role.
+                                </p>
+                            </div>
+                        </div>
+                        <DialogFooter>
+                            <Button
+                                onClick={() => createMutation.mutate(newTenant)}
+                                disabled={createMutation.isPending || !newTenant.name || !newTenant.owner_id}
+                            >
+                                {createMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                Create Organization
+                            </Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+            </div>
+
+            <div className="flex items-center gap-4">
+                <div className="relative flex-1 max-w-md">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input placeholder="Search tenants by name or slug..." className="pl-10" />
+                </div>
+            </div>
+
+            <Card className="shadow-sm border-muted overflow-hidden">
+                {isLoading ? (
+                    <div className="flex justify-center py-20">
+                        <Loader2 className="h-10 w-10 animate-spin text-primary" />
+                    </div>
+                ) : (
+                    <Table>
+                        <TableHeader className="bg-muted/50">
+                            <TableRow>
+                                <TableHead>Organization</TableHead>
+                                <TableHead>Type</TableHead>
+                                <TableHead>Owner</TableHead>
+                                <TableHead>Created At</TableHead>
+                                <TableHead>Status</TableHead>
+                                <TableHead className="text-right">Manage</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {tenants?.map((t: any) => (
+                                <TableRow key={t.id} className="group transition-colors">
+                                    <TableCell>
+                                        <div className="flex items-center gap-3">
+                                            <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center text-primary font-bold">
+                                                {t.name.charAt(0).toUpperCase()}
+                                            </div>
+                                            <div className="flex flex-col">
+                                                <span className="text-sm font-semibold">{t.name}</span>
+                                                <span className="text-[10px] text-muted-foreground font-mono truncate max-w-[150px]">{t.id}</span>
+                                            </div>
+                                        </div>
+                                    </TableCell>
+                                    <TableCell>
+                                        <Badge variant="outline" className="font-mono text-[10px] tracking-tight">
+                                            {t.type}
+                                        </Badge>
+                                    </TableCell>
+                                    <TableCell>
+                                        <div className="flex flex-col">
+                                            <span className="text-xs font-semibold">{t.owner?.first_name} {t.owner?.last_name}</span>
+                                            <span className="text-[10px] text-muted-foreground font-mono">{t.owner?.email}</span>
+                                        </div>
+                                    </TableCell>
+                                    <TableCell className="text-muted-foreground text-xs font-medium">
+                                        {new Date(t.created_at).toLocaleDateString()}
+                                    </TableCell>
+                                    <TableCell>
+                                        <Badge variant="default" className="bg-emerald-500 hover:bg-emerald-600 text-[10px] h-5">
+                                            Active
+                                        </Badge>
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    <MoreVertical className="h-4 w-4" />
+                                                </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align="end">
+                                                <DropdownMenuLabel>Tenant Admin</DropdownMenuLabel>
+                                                <DropdownMenuItem className="cursor-pointer">
+                                                    <Globe className="h-4 w-4 mr-2" /> View Dashboard
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem className="cursor-pointer">
+                                                    <ExternalLink className="h-4 w-4 mr-2" /> Visit Login Page
+                                                </DropdownMenuItem>
+                                                <DropdownMenuSeparator />
+                                                <DropdownMenuItem className="text-destructive cursor-pointer">
+                                                    <Trash2 className="h-4 w-4 mr-2" /> Suspend Tenant
+                                                </DropdownMenuItem>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                            {(!tenants || tenants.length === 0) && (
+                                <TableRow>
+                                    <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
+                                        No organizations found in the platform.
+                                    </TableCell>
+                                </TableRow>
+                            )}
+                        </TableBody>
+                    </Table>
+                )}
+            </Card>
+        </div>
+    );
+}
