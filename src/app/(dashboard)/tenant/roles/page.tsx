@@ -84,9 +84,9 @@ export default function TenantRolesPage() {
                                     </p>
                                     <div className="flex flex-wrap gap-1">
                                         {role.permissions?.length > 0 ? (
-                                            role.permissions.slice(0, 4).map((p: string) => (
-                                                <Badge key={p} variant="secondary" className="text-[9px] px-1.5 py-0 font-mono">
-                                                    {p}
+                                            role.permissions.slice(0, 4).map((p: any) => (
+                                                <Badge key={p.id} variant="secondary" className="text-[9px] px-1.5 py-0 font-mono">
+                                                    {p.name}
                                                 </Badge>
                                             ))
                                         ) : (

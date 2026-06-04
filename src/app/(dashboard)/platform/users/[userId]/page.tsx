@@ -157,7 +157,7 @@ export default function PlatformUserDetailPage() {
         );
     }
 
-    const statusOptions = ["ACTIVE", "INACTIVE", "SUSPENDED", "PENDING_VERIFICATION"];
+    const statusOptions = ["ACTIVE", "INACTIVE", "SUSPENDED"];
 
     // Get user's platform roles
     const userPlatformRoles = user.roles?.filter((r: any) => r.role?.scope === "PLATFORM") || [];
@@ -397,8 +397,8 @@ export default function PlatformUserDetailPage() {
                                                         key={role.id}
                                                         onClick={() => setSelectedRole(role.name)}
                                                         className={`w-full text-left p-3 rounded-xl border transition-all ${selectedRole === role.name
-                                                                ? "border-primary bg-primary/5"
-                                                                : "border-muted hover:border-primary/30"
+                                                            ? "border-primary bg-primary/5"
+                                                            : "border-muted hover:border-primary/30"
                                                             }`}
                                                     >
                                                         <p className="text-sm font-semibold">{role.name}</p>

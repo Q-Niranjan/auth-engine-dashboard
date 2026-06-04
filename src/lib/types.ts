@@ -6,7 +6,7 @@ export interface UserResponse {
     first_name?: string;
     last_name?: string;
     avatar_url?: string | null;
-    status: "ACTIVE" | "INACTIVE" | "SUSPENDED" | "PENDING_VERIFICATION";
+    status: "ACTIVE" | "INACTIVE" | "SUSPENDED";
     is_email_verified: boolean;
     is_phone_verified: boolean;
     mfa_enabled: boolean;
@@ -21,6 +21,12 @@ export interface UserResponse {
             scope: string;
             level: number;
             created_at: string;
+            permissions: Array<{
+                id: string;
+                name: string;
+                description?: string;
+            }>;
+            permission_ids: string[];
         };
         tenant_id: string;
     }>;

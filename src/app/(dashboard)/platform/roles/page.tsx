@@ -186,9 +186,9 @@ export default function PlatformRolesPage() {
                         {!role.permissions?.length && (
                             <span className="text-xs text-muted-foreground italic">None assigned</span>
                         )}
-                        {role.permissions?.slice(0, 5).map((p: string) => (
-                            <Badge key={p} variant="secondary" className="text-[9px] px-1.5 py-0 truncate max-w-full">
-                                {p}
+                        {role.permissions?.slice(0, 5).map((p: any) => (
+                            <Badge key={p.id} variant="secondary" className="text-[9px] px-1.5 py-0 truncate max-w-full">
+                                {p.name}
                             </Badge>
                         ))}
                         {role.permissions?.length > 5 && (
