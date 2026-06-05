@@ -245,7 +245,7 @@ export default function TenantCommunicationsPage() {
                             <div className="space-y-2">
                                 <label className="text-sm font-medium">From Email Address</label>
                                 <Input
-                                    placeholder="auth@yourdomain.com"
+                                    placeholder="noreply@authengine.org"
                                     value={emailForm.from_email}
                                     onChange={(e) => setEmailForm({ ...emailForm, from_email: e.target.value })}
                                 />

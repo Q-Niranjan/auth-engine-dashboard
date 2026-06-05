@@ -201,7 +201,7 @@ export default function TenantSocialPage() {
                                 <div className="space-y-2">
                                     <label className="text-sm font-medium">Discovery URL</label>
                                     <Input
-                                        placeholder="https://auth.example.com/.well-known/openid-configuration"
+                                        placeholder="https://auth.authengine.org/.well-known/openid-configuration"
                                         value={newProvider.oidc_discovery_url}
                                         onChange={(e) => setNewProvider({ ...newProvider, oidc_discovery_url: e.target.value })}
                                     />
@@ -230,7 +230,7 @@ export default function TenantSocialPage() {
                             <div className="space-y-2">
                                 <label className="text-sm font-medium">Redirect URI</label>
                                 <Input
-                                    placeholder="https://api.yourdomain.com/v1/auth/oauth/google/callback"
+                                    placeholder="https://api.authengine.org/api/v1/auth/oauth/google/callback"
                                     value={newProvider.redirect_uri}
                                     onChange={(e) => setNewProvider({ ...newProvider, redirect_uri: e.target.value })}
                                 />
@@ -269,7 +269,7 @@ export default function TenantSocialPage() {
                             <div className="space-y-2">
                                 <label className="text-sm font-medium">Discovery URL</label>
                                 <Input
-                                    placeholder="https://auth.example.com/.well-known/openid-configuration"
+                                    placeholder="https://auth.authengine.org/.well-known/openid-configuration"
                                     value={editForm.oidc_discovery_url}
                                     onChange={(e) => setEditForm({ ...editForm, oidc_discovery_url: e.target.value })}
                                 />
@@ -301,7 +301,7 @@ export default function TenantSocialPage() {
                         <div className="space-y-2">
                             <label className="text-sm font-medium">Redirect URI</label>
                             <Input
-                                placeholder="https://api.yourdomain.com/v1/auth/oauth/callback"
+                                placeholder="https://api.authengine.org/api/v1/auth/oauth/callback"
                                 value={editForm.redirect_uri}
                                 onChange={(e) => setEditForm({ ...editForm, redirect_uri: e.target.value })}
                             />

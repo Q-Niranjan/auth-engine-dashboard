@@ -14,19 +14,24 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
     const { accessToken, user, setUser, logout } = useAuthStore();
     const [isMounting, setIsMounting] = useState(true);
-    const [hasHydrated, setHasHydrated] = useState(
-        () => useAuthStore.persist.hasHydrated()
-    );
+    const [hasHydrated, setHasHydrated] = useState(false);
 
     useEffect(() => {
         setIsMounting(false);
-    }, []);
 
-    useEffect(() => {
-        const unsub = useAuthStore.persist.onFinishHydration(() => {
+        const persistApi = useAuthStore.persist;
+        if (!persistApi) {
+            setHasHydrated(true);
+            return;
+        }
+
+        if (persistApi.hasHydrated()) {
+            setHasHydrated(true);
+        }
+
+        return persistApi.onFinishHydration(() => {
             setHasHydrated(true);
         });
-        return unsub;
     }, []);
 
     const { isLoading: isVerifying } = useQuery({

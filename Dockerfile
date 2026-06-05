@@ -13,8 +13,8 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-ARG NEXT_PUBLIC_API_URL=https://api.bestcrmhub.com/api/v1
-ARG NEXT_PUBLIC_APP_URL=https://app.bestcrmhub.com
+ARG NEXT_PUBLIC_API_URL=https://api.authengine.org/api/v1
+ARG NEXT_PUBLIC_APP_URL=https://app.authengine.org
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_APP_URL=$NEXT_PUBLIC_APP_URL
 ENV NEXT_TELEMETRY_DISABLED=1

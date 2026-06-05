@@ -2,7 +2,7 @@
 
 Next.js dashboard for **AuthEngine** — platform and tenant administration, user self-service, MFA and passkeys.
 
-**Documentation:** [auth-engine-infra/docs](https://github.com/Q-Niranjan/auth-engine-infra/tree/main/docs) · published at [docs.bestcrmhub.com](https://docs.bestcrmhub.com)
+**Documentation:** [auth-engine-infra/docs](https://github.com/Q-Niranjan/auth-engine-infra/tree/main/docs) · published at [docs.authengine.org](https://docs.authengine.org)
 
 | Guide | Link |
 |-------|------|
@@ -12,6 +12,15 @@ Next.js dashboard for **AuthEngine** — platform and tenant administration, use
 | Architecture | [architecture.md](https://github.com/Q-Niranjan/auth-engine-infra/blob/main/docs/architecture.md) |
 | Deployment | [deployment.md](https://github.com/Q-Niranjan/auth-engine-infra/blob/main/docs/deployment.md) |
 | Security | [security-overview.md](https://github.com/Q-Niranjan/auth-engine-infra/blob/main/docs/security-overview.md) |
+
+## Production
+
+| Host | Role |
+|------|------|
+| [api.authengine.org](https://api.authengine.org) | API + Swagger |
+| [auth.authengine.org](https://auth.authengine.org) | OIDC / login UI |
+| [app.authengine.org](https://app.authengine.org) | Admin dashboard |
+| [docs.authengine.org](https://docs.authengine.org) | Documentation |
 
 ## Docker
 
