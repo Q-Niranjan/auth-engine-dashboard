@@ -1,4 +1,4 @@
-name: auth-engine-frontend · Lint and Build
+name: auth-engine-dashboard · Lint and Build
 
 # Manual only for now. To automate later, uncomment:
 # on:

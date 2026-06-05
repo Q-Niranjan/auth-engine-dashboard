@@ -1,17 +1,17 @@
-# auth-engine-frontend
+# auth-engine-dashboard
 
 Next.js dashboard for **AuthEngine** — platform and tenant administration, user self-service, MFA and passkeys.
 
-**Documentation:** [auth-engine-infra/docs](https://github.com/Q-Niranjan/auth-engine-infra/tree/main/docs) · published at [docs.authengine.org](https://docs.authengine.org)
+**Documentation:** [auth-engine-infra/docs](https://github.com/auth-engine/auth-engine-infra/tree/main/docs) · published at [docs.authengine.org](https://docs.authengine.org)
 
 | Guide | Link |
 |-------|------|
-| Quick Start | [quick-start.md](https://github.com/Q-Niranjan/auth-engine-infra/blob/main/docs/quick-start.md) |
-| OAuth2 / OIDC | [oauth2-oidc-guides.md](https://github.com/Q-Niranjan/auth-engine-infra/blob/main/docs/oauth2-oidc-guides.md) |
-| API Reference | [api-reference.md](https://github.com/Q-Niranjan/auth-engine-infra/blob/main/docs/api-reference.md) |
-| Architecture | [architecture.md](https://github.com/Q-Niranjan/auth-engine-infra/blob/main/docs/architecture.md) |
-| Deployment | [deployment.md](https://github.com/Q-Niranjan/auth-engine-infra/blob/main/docs/deployment.md) |
-| Security | [security-overview.md](https://github.com/Q-Niranjan/auth-engine-infra/blob/main/docs/security-overview.md) |
+| Quick Start | [quick-start.md](https://github.com/auth-engine/auth-engine-infra/blob/main/docs/quick-start.md) |
+| OAuth2 / OIDC | [oauth2-oidc-guides.md](https://github.com/auth-engine/auth-engine-infra/blob/main/docs/oauth2-oidc-guides.md) |
+| API Reference | [api-reference.md](https://github.com/auth-engine/auth-engine-infra/blob/main/docs/api-reference.md) |
+| Architecture | [architecture.md](https://github.com/auth-engine/auth-engine-infra/blob/main/docs/architecture.md) |
+| Deployment | [deployment.md](https://github.com/auth-engine/auth-engine-infra/blob/main/docs/deployment.md) |
+| Security | [security-overview.md](https://github.com/auth-engine/auth-engine-infra/blob/main/docs/security-overview.md) |
 
 ## Production
 
@@ -24,16 +24,18 @@ Next.js dashboard for **AuthEngine** — platform and tenant administration, use
 
 ## Docker
 
-Dockerfile only — compose files live in **[auth-engine-infra/compose](https://github.com/Q-Niranjan/auth-engine-infra/tree/main/compose)**.
+Dockerfile only — compose files live in **[auth-engine-infra/compose](https://github.com/auth-engine/auth-engine-infra/tree/main/compose)**.
 
 ```bash
 cd auth-engine-infra/compose
 docker compose up -d --build
 ```
 
+Image: `qniranjan01/authengine-dashboard` on Docker Hub (set `DOCKERHUB_USERNAME=qniranjan01` in GitHub Actions secrets).
+
 ## Related repositories
 
 | Repository | Role |
 |------------|------|
-| [auth-engine](https://github.com/Q-Niranjan/auth-engine) | Backend API |
-| [auth-engine-infra](https://github.com/Q-Niranjan/auth-engine-infra) | Terraform, Docker Compose, docs |
+| [auth-engine](https://github.com/auth-engine/auth-engine) | Backend API |
+| [auth-engine-infra](https://github.com/auth-engine/auth-engine-infra) | Terraform, Docker Compose, docs |

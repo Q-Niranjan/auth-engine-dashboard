@@ -1,4 +1,4 @@
-name: auth-engine-frontend · Register Production Deployment
+name: auth-engine-dashboard · Register Production Deployment
 
 # Manual only for now. To automate on push to main later, uncomment:
 # on:

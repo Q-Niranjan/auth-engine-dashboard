@@ -1,4 +1,4 @@
-name: auth-engine-frontend · Create Version Tag
+name: auth-engine-dashboard · Create Version Tag
 
 on:
   workflow_dispatch:

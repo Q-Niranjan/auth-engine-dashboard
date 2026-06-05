@@ -1,4 +1,4 @@
-name: auth-engine-frontend · Build and Push Docker Image
+name: auth-engine-dashboard · Build and Push Docker Image
 
 # Manual only for now. To automate on tag push later, uncomment:
 # on:
@@ -15,7 +15,7 @@ on:
 
 env:
   REGISTRY: docker.io
-  IMAGE_NAME: ${{ secrets.DOCKERHUB_USERNAME }}/authengine-frontend
+  IMAGE_NAME: ${{ secrets.DOCKERHUB_USERNAME }}/authengine-dashboard
 
 jobs:
   build:
