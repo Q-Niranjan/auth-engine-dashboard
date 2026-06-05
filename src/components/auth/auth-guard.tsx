@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
+import axios from "axios";
 import { useAuthStore } from "@/stores/auth-store";
 import { useQuery } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api-client";
@@ -13,44 +14,56 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
     const { accessToken, user, setUser, logout } = useAuthStore();
     const [isMounting, setIsMounting] = useState(true);
+    const [hasHydrated, setHasHydrated] = useState(
+        () => useAuthStore.persist.hasHydrated()
+    );
 
-    // Avoid hydration mismatches by not rendering auth-dependent state until mounted
     useEffect(() => {
         setIsMounting(false);
     }, []);
 
-    // Fetch the current user on mount to verify token is still valid
+    useEffect(() => {
+        const unsub = useAuthStore.persist.onFinishHydration(() => {
+            setHasHydrated(true);
+        });
+        return unsub;
+    }, []);
+
     const { isLoading: isVerifying } = useQuery({
         queryKey: ["verifyUser", accessToken],
         queryFn: async () => {
             if (!accessToken) return null;
             try {
-                const { data } = await apiClient.get<AuthResponse["user"]>("/me");
+                const { data } = await apiClient.get<AuthResponse["user"]>("/me/");
                 if (data) {
                     setUser(data);
                 }
                 return data;
             } catch (error) {
-                logout();
+                if (axios.isAxiosError(error) && error.response?.status === 401) {
+                    logout();
+                }
                 return null;
             }
         },
-        // Only attempt verification if we think we are logged in
-        enabled: !!accessToken && !isMounting,
+        enabled: !!accessToken && !isMounting && hasHydrated,
         retry: false,
         staleTime: 5 * 60 * 1000,
     });
 
     useEffect(() => {
-        if (!isMounting && !isVerifying && !accessToken) {
-            // User is not logged in, redirect to login with return path
+        if (!hasHydrated || isMounting || isVerifying) return;
+
+        if (!accessToken) {
             const returnTo = encodeURIComponent(pathname);
             router.push(`/login?returnTo=${returnTo}`);
         }
-    }, [accessToken, isMounting, isVerifying, pathname, router]);
+    }, [accessToken, hasHydrated, isMounting, isVerifying, pathname, router]);
 
-    // Handle various loading states
-    if (isMounting || isVerifying) {
+    const waitingForAuth = isMounting || !hasHydrated;
+    const waitingForVerify = isVerifying && !user;
+
+    if (waitingForAuth || waitingForVerify) {
         return (
             <div className="flex h-screen w-full items-center justify-center bg-background">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -58,7 +71,6 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
         );
     }
 
-    // If not mounted or not verified, render nothing while redirect handles it
     if (!accessToken || !user) {
         return null;
     }

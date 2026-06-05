@@ -38,12 +38,12 @@ export const useAuthStore = create<AuthState>()(
                 }),
         }),
         {
-            name: "auth-storage", // name of item in the storage (must be unique)
-            // Only persist tokens and active tenant, not the full user object (which should be re-fetched)
+            name: "auth-storage",
             partialize: (state) => ({
                 accessToken: state.accessToken,
                 refreshToken: state.refreshToken,
                 activeTenantId: state.activeTenantId,
+                user: state.user,
             }),
         }
     )

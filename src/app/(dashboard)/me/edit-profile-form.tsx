@@ -51,7 +51,7 @@ export function EditProfileForm({ onSuccess }: EditProfileFormProps) {
 
     const mutation = useMutation({
         mutationFn: async (values: ProfileFormValues) => {
-            const { data } = await apiClient.put("/me", values);
+            const { data } = await apiClient.put("/me/", values);
             return data;
         },
         onSuccess: (data) => {

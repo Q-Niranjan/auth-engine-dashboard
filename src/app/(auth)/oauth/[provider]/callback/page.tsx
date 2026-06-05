@@ -57,7 +57,7 @@ export default function OAuthCallbackPage({ params }: OAuthCallbackParams) {
             );
 
             // 2. Auto-fetch the user details
-            const { data: userData } = await apiClient.get("/me", {
+            const { data: userData } = await apiClient.get("/me/", {
                 headers: {
                     Authorization: `Bearer ${authData.access_token}`,
                 },

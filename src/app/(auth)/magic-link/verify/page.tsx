@@ -38,7 +38,7 @@ function MagicLinkVerifyContent() {
             const { data } = await apiClient.get<AuthResponse>(`/auth/magic-link/verify?token=${token}`);
 
             // Auto-fetch the user details after successful verification
-            const currentUserData = await apiClient.get("/me", {
+            const currentUserData = await apiClient.get("/me/", {
                 headers: {
                     Authorization: `Bearer ${data.access_token}`
                 }
