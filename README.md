@@ -13,6 +13,27 @@ Next.js dashboard for **AuthEngine** — platform and tenant administration, use
 | Deployment | [deployment.md](https://docs.authengine.org/deployment/) |
 | Security | [security-overview.md](https://docs.authengine.org/security-overview/) |
 
+## What this repository is
+
+Next.js 16 admin UI for platform administration (`/platform/*`), tenant administration (`/tenant/*`), and user self-service (`/me/*`). It talks to the API via `NEXT_PUBLIC_API_URL`. Docker Compose manifests live in **[auth-engine-infra](https://github.com/auth-engine/auth-engine-infra)**.
+
+## Local development
+
+```bash
+cd auth-engine-dashboard
+cp .env.example .env.local
+npm ci && npm run dev
+```
+
+Minimum `.env.local` values:
+
+```env
+NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+```
+
+Point `NEXT_PUBLIC_API_URL` at a running API (local or remote). For the full stack, use Compose from `auth-engine-infra`.
+
 ## Production
 
 | Host | Role |
@@ -33,11 +54,16 @@ docker compose up -d --build
 
 Pre-built production images and CI/CD: [Deployment guide](https://docs.authengine.org/deployment/).
 
+## Contributing
+
+See [Contributing](https://docs.authengine.org/contributing/) or [CONTRIBUTING.md](CONTRIBUTING.md). Report security issues per [Security Policy](https://docs.authengine.org/security-policy/) — not via public issues.
+
 ## Related repositories
 
 | Repository | Role |
 |------------|------|
-| [auth-engine](https://github.com/auth-engine/auth-engine) | Backend API |
+| [auth-engine](https://github.com/auth-engine/auth-engine) | FastAPI backend — IAM, OIDC, introspection |
 | [auth-engine-data](https://github.com/auth-engine/auth-engine-data) | Roles, permissions & super-admin seeding |
 | [auth-engine-docs](https://github.com/auth-engine/auth-engine-docs) | Platform documentation |
 | [auth-engine-infra](https://github.com/auth-engine/auth-engine-infra) | Terraform & Docker Compose |
+| [.github](https://github.com/auth-engine/.github) | Org profile, contributing & security policy |
