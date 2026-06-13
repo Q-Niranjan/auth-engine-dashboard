@@ -2,16 +2,16 @@
 
 Next.js dashboard for **AuthEngine** — platform and tenant administration, user self-service, MFA and passkeys.
 
-**Documentation:** [auth-engine-infra/docs](https://github.com/auth-engine/auth-engine-infra/tree/main/docs) · published at [docs.authengine.org](https://docs.authengine.org)
+**Documentation:** [auth-engine-docs](https://github.com/auth-engine/auth-engine-docs) · published at [docs.authengine.org](https://docs.authengine.org)
 
 | Guide | Link |
 |-------|------|
-| Quick Start | [quick-start.md](https://github.com/auth-engine/auth-engine-infra/blob/main/docs/quick-start.md) |
-| OAuth2 / OIDC | [oauth2-oidc-guides.md](https://github.com/auth-engine/auth-engine-infra/blob/main/docs/oauth2-oidc-guides.md) |
-| API Reference | [api-reference.md](https://github.com/auth-engine/auth-engine-infra/blob/main/docs/api-reference.md) |
-| Architecture | [architecture.md](https://github.com/auth-engine/auth-engine-infra/blob/main/docs/architecture.md) |
-| Deployment | [deployment.md](https://github.com/auth-engine/auth-engine-infra/blob/main/docs/deployment.md) |
-| Security | [security-overview.md](https://github.com/auth-engine/auth-engine-infra/blob/main/docs/security-overview.md) |
+| Quick Start | [quick-start.md](https://docs.authengine.org/quick-start/) |
+| OAuth2 / OIDC | [oauth2-oidc-guides.md](https://docs.authengine.org/oauth2-oidc-guides/) |
+| API Reference | [api-reference.md](https://docs.authengine.org/api-reference/) |
+| Architecture | [architecture.md](https://docs.authengine.org/architecture/) |
+| Deployment | [deployment.md](https://docs.authengine.org/deployment/) |
+| Security | [security-overview.md](https://docs.authengine.org/security-overview/) |
 
 ## Production
 
@@ -38,4 +38,6 @@ Pre-built production images and CI/CD: [Deployment guide](https://docs.authengin
 | Repository | Role |
 |------------|------|
 | [auth-engine](https://github.com/auth-engine/auth-engine) | Backend API |
-| [auth-engine-infra](https://github.com/auth-engine/auth-engine-infra) | Terraform, Docker Compose, docs |
+| [auth-engine-data](https://github.com/auth-engine/auth-engine-data) | Roles, permissions & super-admin seeding |
+| [auth-engine-docs](https://github.com/auth-engine/auth-engine-docs) | Platform documentation |
+| [auth-engine-infra](https://github.com/auth-engine/auth-engine-infra) | Terraform & Docker Compose |
