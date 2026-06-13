@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { Loader2, MailCheck, AlertCircle } from "lucide-react";
@@ -8,6 +8,7 @@ import { Loader2, MailCheck, AlertCircle } from "lucide-react";
 import { apiClient } from "@/lib/api-client";
 import { useAuthStore } from "@/stores/auth-store";
 import { AuthResponse } from "@/lib/types";
+import { getApiErrorMessage } from "@/lib/errors";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -20,15 +21,13 @@ import {
 } from "@/components/ui/card";
 import Link from "next/link";
 
-import { Suspense } from "react";
-
 function MagicLinkVerifyContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const token = searchParams.get("token");
 
     const { setTokens, setUser } = useAuthStore();
-    const [isRedirecting, setIsRedirecting] = useState(false);
+    const handledRef = useRef(false);
 
     const { data, error, isPending } = useQuery({
         queryKey: ["verifyMagicLink", token],
@@ -54,17 +53,15 @@ function MagicLinkVerifyContent() {
     });
 
     useEffect(() => {
-        if (data && !isRedirecting) {
-            setIsRedirecting(true);
-            setTokens(data.tokens.access_token, data.tokens.refresh_token);
-            setUser(data.user);
+        if (!data || handledRef.current) return;
+        handledRef.current = true;
+        setTokens(data.tokens.access_token, data.tokens.refresh_token);
+        setUser(data.user);
 
-            // Redirect to dashboard after a short delay
-            setTimeout(() => {
-                router.push("/me");
-            }, 1500);
-        }
-    }, [data, isRedirecting, router, setTokens, setUser]);
+        setTimeout(() => {
+            router.push("/me");
+        }, 1500);
+    }, [data, router, setTokens, setUser]);
 
     if (!token) {
         return (
@@ -76,7 +73,7 @@ function MagicLinkVerifyContent() {
                         </div>
                         <CardTitle className="text-2xl font-bold tracking-tight">Invalid Link</CardTitle>
                         <CardDescription>
-                            We couldn't find a magic link token in the URL.
+                            We couldn&apos;t find a magic link token in the URL.
                         </CardDescription>
                     </CardHeader>
                     <CardFooter>
@@ -114,7 +111,7 @@ function MagicLinkVerifyContent() {
                     </CardTitle>
                     <CardDescription>
                         {isPending && "Please wait while we securely log you in."}
-                        {error && ((error as any).response?.data?.detail || "This magic link is invalid or has expired. Please request a new one.")}
+                        {error && getApiErrorMessage(error, "This magic link is invalid or has expired. Please request a new one.")}
                         {data && "You have been securely signed in. Redirecting..."}
                     </CardDescription>
                 </CardHeader>

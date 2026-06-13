@@ -9,7 +9,6 @@ import {
     ChevronRight,
     ShieldCheck,
     Mail,
-    Smartphone,
     Globe,
     ScrollText
 } from "lucide-react";

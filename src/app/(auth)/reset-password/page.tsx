@@ -11,6 +11,7 @@ import { Loader2, KeyRound, AlertCircle, CheckCircle2, Eye, EyeOff } from "lucid
 import Link from "next/link";
 
 import { apiClient } from "@/lib/api-client";
+import { getApiErrorMessage } from "@/lib/errors";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -51,7 +52,7 @@ function ResetPasswordContent() {
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
     // Validate the token first
-    const { data: tokenValidation, isPending: isValidating, error: validationError } = useQuery({
+    const { isPending: isValidating, error: validationError } = useQuery({
         queryKey: ["validateResetToken", token],
         queryFn: async () => {
             if (!token) throw new Error("No reset token provided");
@@ -86,10 +87,8 @@ function ResetPasswordContent() {
             // Optionally redirect to login shortly after
             setTimeout(() => router.push("/login"), 3000);
         },
-        onError: (error: any) => {
-            toast.error(
-                error.response?.data?.detail || "Failed to reset password. The link might have expired."
-            );
+        onError: (error: unknown) => {
+            toast.error(getApiErrorMessage(error, "Failed to reset password. The link might have expired."));
         },
     });
 
@@ -108,7 +107,7 @@ function ResetPasswordContent() {
                         </div>
                         <CardTitle className="text-2xl font-bold tracking-tight">Invalid Link</CardTitle>
                         <CardDescription>
-                            We couldn't find a reset token in the URL.
+                            We couldn&apos;t find a reset token in the URL.
                         </CardDescription>
                     </CardHeader>
                     <CardFooter>

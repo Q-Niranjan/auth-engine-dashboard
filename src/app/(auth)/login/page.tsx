@@ -12,7 +12,8 @@ import { startAuthentication } from "@simplewebauthn/browser";
 
 import { apiClient } from "@/lib/api-client";
 import { useAuthStore } from "@/stores/auth-store";
-import { AuthResponse } from "@/lib/types";
+import { AuthResponse, MFAChallengeResponse } from "@/lib/types";
+import { getApiErrorMessage, isNotAllowedError } from "@/lib/errors";
 import { FaGithub, FaGoogle, FaMicrosoft } from "react-icons/fa";
 
 import { Button } from "@/components/ui/button";
@@ -68,16 +69,16 @@ function LoginPageContent() {
             const { data } = await apiClient.post("/auth/login", values);
             return data;
         },
-        onSuccess: (data: any) => {
-            if (data.mfa_pending_token && !data.access_token) {
+        onSuccess: (data: AuthResponse | MFAChallengeResponse) => {
+            if ("mfa_pending_token" in data && data.mfa_pending_token) {
                 setMfaPendingToken(data.mfa_pending_token);
                 toast.info("Enter your MFA code to continue.");
                 return;
             }
-            handleLoginSuccess(data);
+            handleLoginSuccess(data as AuthResponse);
         },
-        onError: (error: any) => {
-            toast.error(error.response?.data?.detail || "Invalid email or password.");
+        onError: (error: unknown) => {
+            toast.error(getApiErrorMessage(error, "Invalid email or password."));
         },
     });
 
@@ -124,11 +125,11 @@ function LoginPageContent() {
             );
 
             handleLoginSuccess(loginData);
-        } catch (error: any) {
-            if (error.name === "NotAllowedError") {
+        } catch (error: unknown) {
+            if (isNotAllowedError(error)) {
                 toast.error("Passkey authentication cancelled.");
             } else {
-                toast.error(error.response?.data?.detail || "Passkey login failed.");
+                toast.error(getApiErrorMessage(error, "Passkey login failed."));
             }
         } finally {
             setIsWebAuthnLoading(false);
@@ -343,7 +344,7 @@ function LoginPageContent() {
                 </CardContent>
 
                 <CardFooter className="justify-center text-sm">
-                    Don't have an account?{" "}
+                    Don&apos;t have an account?{" "}
                     <Link href="/register" className="text-primary ml-1">
                         Sign up
                     </Link>

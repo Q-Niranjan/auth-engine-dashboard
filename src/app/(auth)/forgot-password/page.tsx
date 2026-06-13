@@ -10,6 +10,7 @@ import { Loader2, ArrowLeft, MailCheck } from "lucide-react";
 import Link from "next/link";
 
 import { apiClient } from "@/lib/api-client";
+import { getApiErrorMessage } from "@/lib/errors";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -57,12 +58,10 @@ export default function ForgotPasswordPage() {
             setIsSent(true);
             toast.success("Password reset email sent!");
         },
-        onError: (error: any) => {
+        onError: (error: unknown) => {
             // Don't leak whether the email exists or not from standard security practices.
             // But we will show backend errors if any happen reliably.
-            toast.error(
-                error.response?.data?.detail || "Something went wrong. Please try again."
-            );
+            toast.error(getApiErrorMessage(error, "Something went wrong. Please try again."));
         },
     });
 
@@ -80,7 +79,7 @@ export default function ForgotPasswordPage() {
                         </div>
                         <CardTitle className="text-3xl font-bold tracking-tight">Check your email</CardTitle>
                         <CardDescription className="text-base">
-                            We've sent password reset instructions to <span className="font-semibold text-foreground">{sentEmail}</span>.
+                            We&apos;ve sent password reset instructions to <span className="font-semibold text-foreground">{sentEmail}</span>.
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="text-center text-sm text-muted-foreground">
@@ -117,7 +116,7 @@ export default function ForgotPasswordPage() {
                 <CardHeader className="space-y-1 text-center">
                     <CardTitle className="text-3xl font-bold tracking-tight">Forgot Password</CardTitle>
                     <CardDescription>
-                        Enter your email and we'll send you a link to reset your password.
+                        Enter your email and we&apos;ll send you a link to reset your password.
                     </CardDescription>
                 </CardHeader>
                 <CardContent>

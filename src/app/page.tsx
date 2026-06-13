@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useEffect, useState } from "react";
+import { Fragment, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -22,6 +22,7 @@ import { Badge } from "@/components/ui/badge";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { ContactForm } from "@/components/contact-form";
 import { useAuthStore } from "@/stores/auth-store";
+import { useIsClient } from "@/hooks/use-is-client";
 
 const DOCS_URL = "https://docs.authengine.org";
 const API_DOCS_URL = "https://api.authengine.org/docs";
@@ -108,16 +109,15 @@ function TypicalCell({ status }: { status: TypicalStatus }) {
 export default function Home() {
   const { accessToken } = useAuthStore();
   const router = useRouter();
-  const [isMounted, setIsMounted] = useState(false);
+  const isClient = useIsClient();
 
   useEffect(() => {
-    setIsMounted(true);
     if (accessToken) {
       router.push("/me");
     }
   }, [accessToken, router]);
 
-  if (!isMounted || accessToken) {
+  if (!isClient || accessToken) {
     return null;
   }
 

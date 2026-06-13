@@ -2,8 +2,9 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api-client";
+import { getApiErrorMessage } from "@/lib/errors";
+import { UserResponse } from "@/lib/types";
 import {
-    Users2,
     Search,
     MoreVertical,
     ShieldCheck,
@@ -26,10 +27,6 @@ import {
 } from "@/components/ui/table";
 import {
     Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
 } from "@/components/ui/card";
 import {
     DropdownMenu,
@@ -52,10 +49,10 @@ export default function PlatformUsersPage() {
     const [searchTerm, setSearchTerm] = useState("");
 
     // 1. Fetch Users
-    const { data: users, isLoading } = useQuery({
+    const { data: users, isLoading } = useQuery<UserResponse[]>({
         queryKey: ["allUsers"],
         queryFn: async () => {
-            const { data } = await apiClient.get("/platform/users");
+            const { data } = await apiClient.get<UserResponse[]>("/platform/users");
             return data;
         },
     });
@@ -69,8 +66,8 @@ export default function PlatformUsersPage() {
             toast.success("User status updated");
             queryClient.invalidateQueries({ queryKey: ["allUsers"] });
         },
-        onError: (error: any) => {
-            toast.error(error.response?.data?.detail || "Failed to update status");
+        onError: (error: unknown) => {
+            toast.error(getApiErrorMessage(error, "Failed to update status"));
         },
     });
 
@@ -83,12 +80,12 @@ export default function PlatformUsersPage() {
             toast.success("User deleted");
             queryClient.invalidateQueries({ queryKey: ["allUsers"] });
         },
-        onError: (error: any) => {
-            toast.error(error.response?.data?.detail || "Failed to delete user");
+        onError: (error: unknown) => {
+            toast.error(getApiErrorMessage(error, "Failed to delete user"));
         },
     });
 
-    const filteredUsers = users?.filter((u: any) =>
+    const filteredUsers = users?.filter((u) =>
         u.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
         u.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
         u.username?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -135,7 +132,7 @@ export default function PlatformUsersPage() {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {filteredUsers?.map((u: any) => (
+                            {filteredUsers?.map((u) => (
                                 <TableRow
                                     key={u.id}
                                     className="group transition-colors cursor-pointer"

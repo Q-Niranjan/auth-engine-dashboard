@@ -2,10 +2,10 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api-client";
+import { TenantResponse } from "@/lib/types";
 import {
     Building2,
     Users2,
-    ShieldAlert,
     Activity,
     TrendingUp,
     Server,
@@ -25,10 +25,10 @@ import { Progress } from "@/components/ui/progress";
 
 export default function PlatformOverviewPage() {
     // 1. Fetch Global Stats
-    const { data: tenants } = useQuery({
+    const { data: tenants } = useQuery<TenantResponse[]>({
         queryKey: ["allTenants"],
         queryFn: async () => {
-            const { data } = await apiClient.get("/platform/tenants");
+            const { data } = await apiClient.get<TenantResponse[]>("/platform/tenants");
             return data;
         },
     });
@@ -139,7 +139,7 @@ export default function PlatformOverviewPage() {
                     </CardHeader>
                     <CardContent>
                         <div className="space-y-4">
-                            {tenants?.slice(0, 5).map((t: any) => (
+                            {tenants?.slice(0, 5).map((t) => (
                                 <div key={t.id} className="flex items-center justify-between p-3 rounded-xl hover:bg-muted/50 transition-colors border border-transparent hover:border-muted">
                                     <div className="flex items-center gap-3">
                                         <div className="h-10 w-10 rounded-xl bg-background border flex items-center justify-center font-bold text-primary shadow-sm">
@@ -147,12 +147,11 @@ export default function PlatformOverviewPage() {
                                         </div>
                                         <div>
                                             <p className="text-sm font-semibold">{t.name}</p>
-                                            <p className="text-[10px] font-mono text-muted-foreground">{t.slug}</p>
+                                            <p className="text-[10px] font-mono text-muted-foreground">{t.type}</p>
                                         </div>
                                     </div>
                                     <div className="text-right">
                                         <Badge variant="secondary" className="text-[10px] h-5 mb-1">Active</Badge>
-                                        <p className="text-[10px] text-muted-foreground">{new Date(t.created_at).toLocaleDateString()}</p>
                                     </div>
                                 </div>
                             ))}

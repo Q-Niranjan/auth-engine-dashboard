@@ -1,14 +1,13 @@
 "use client";
 
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api-client";
+import { Permission, Role } from "@/lib/types";
 import { useAuthStore } from "@/stores/auth-store";
 import {
     ShieldCheck,
     Plus,
-    Trash2,
     Loader2,
-    Lock,
     ChevronRight,
     Info,
     Shield
@@ -22,20 +21,15 @@ import {
     CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { toast } from "sonner";
-import { useState } from "react";
 
 export default function TenantRolesPage() {
-    const queryClient = useQueryClient();
     const { activeTenantId } = useAuthStore();
 
-    // 1. Fetch Tenant Roles
-    const { data: roles, isLoading } = useQuery({
+    const { data: roles, isLoading } = useQuery<Role[]>({
         queryKey: ["tenantRoles", activeTenantId],
         queryFn: async () => {
-            const { data } = await apiClient.get(`/tenants/${activeTenantId}/roles`);
+            const { data } = await apiClient.get<Role[]>(`/tenants/${activeTenantId}/roles`);
             return data;
         },
         enabled: !!activeTenantId,
@@ -63,7 +57,7 @@ export default function TenantRolesPage() {
                         <Loader2 className="h-10 w-10 animate-spin text-primary" />
                     </div>
                 ) : (
-                    roles?.map((role: any) => (
+                    roles?.map((role) => (
                         <Card key={role.id} className="shadow-sm border-muted hover:border-primary/20 transition-all group overflow-hidden">
                             <CardHeader className="pb-2">
                                 <div className="flex items-center justify-between">
@@ -84,7 +78,7 @@ export default function TenantRolesPage() {
                                     </p>
                                     <div className="flex flex-wrap gap-1">
                                         {role.permissions?.length > 0 ? (
-                                            role.permissions.slice(0, 4).map((p: any) => (
+                                            role.permissions.slice(0, 4).map((p: Permission) => (
                                                 <Badge key={p.id} variant="secondary" className="text-[9px] px-1.5 py-0 font-mono">
                                                     {p.name}
                                                 </Badge>

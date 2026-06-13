@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api-client";
+import { getApiErrorMessage } from "@/lib/errors";
 import { CheckCircle2, XCircle, Loader2, Smartphone, ArrowRight } from "lucide-react";
 
 import {
@@ -30,9 +31,9 @@ export default function VerifyPhonePage() {
         onSuccess: () => {
             setStatus("success");
         },
-        onError: (error: any) => {
+        onError: (error: unknown) => {
             setStatus("error");
-            setErrorMessage(error.response?.data?.detail || "Verification failed. Please check the code.");
+            setErrorMessage(getApiErrorMessage(error, "Verification failed. Please check the code."));
         },
     });
 
@@ -52,8 +53,8 @@ export default function VerifyPhonePage() {
             setStatus("input");
             setCode("");
         },
-        onError: (error: any) => {
-            setErrorMessage(error.response?.data?.detail || "Failed to resend code");
+        onError: (error: unknown) => {
+            setErrorMessage(getApiErrorMessage(error, "Failed to resend code"));
         },
     });
 

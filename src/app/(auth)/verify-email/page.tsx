@@ -1,14 +1,14 @@
 "use client";
 
 import { useEffect, useState, Suspense } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { useMutation } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api-client";
-import { CheckCircle2, XCircle, Loader2, Mail, ArrowRight } from "lucide-react";
+import { getApiErrorMessage } from "@/lib/errors";
+import { CheckCircle2, XCircle, Loader2, ArrowRight } from "lucide-react";
 
 import {
     Card,
-    CardContent,
     CardDescription,
     CardHeader,
     CardTitle,
@@ -19,7 +19,6 @@ import Link from "next/link";
 
 function VerifyEmailContent() {
     const searchParams = useSearchParams();
-    const router = useRouter();
     const token = searchParams.get("token");
 
     const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
@@ -33,9 +32,9 @@ function VerifyEmailContent() {
         onSuccess: () => {
             setStatus("success");
         },
-        onError: (error: any) => {
+        onError: (error: unknown) => {
             setStatus("error");
-            setErrorMessage(error.response?.data?.detail || "Verification failed or token expired.");
+            setErrorMessage(getApiErrorMessage(error, "Verification failed or token expired."));
         },
     });
 

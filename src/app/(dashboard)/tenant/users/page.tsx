@@ -2,14 +2,13 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api-client";
+import { getApiErrorMessage } from "@/lib/errors";
+import { UserResponse } from "@/lib/types";
 import { useAuthStore } from "@/stores/auth-store";
 import {
-    Users,
     UserPlus,
     Trash2,
-    Shield,
     MoreVertical,
-    Mail,
     Loader2,
     Search,
     Filter
@@ -25,10 +24,6 @@ import {
 } from "@/components/ui/table";
 import {
     Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
 } from "@/components/ui/card";
 import {
     DropdownMenu,
@@ -61,11 +56,11 @@ export default function TenantUsersPage() {
     const [isInviteOpen, setIsInviteOpen] = useState(false);
 
     // 1. Fetch Users
-    const { data: users, isLoading } = useQuery({
+    const { data: users, isLoading } = useQuery<UserResponse[]>({
         queryKey: ["tenantUsers", activeTenantId],
         queryFn: async () => {
             if (!activeTenantId) return [];
-            const { data } = await apiClient.get(`/tenants/${activeTenantId}/users`);
+            const { data } = await apiClient.get<UserResponse[]>(`/tenants/${activeTenantId}/users`);
             return data;
         },
         enabled: !!activeTenantId,
@@ -85,8 +80,8 @@ export default function TenantUsersPage() {
             setInviteEmail("");
             queryClient.invalidateQueries({ queryKey: ["tenantUsers", activeTenantId] });
         },
-        onError: (error: any) => {
-            toast.error(error.response?.data?.detail || "Failed to send invitation");
+        onError: (error: unknown) => {
+            toast.error(getApiErrorMessage(error, "Failed to send invitation"));
         },
     });
 
@@ -99,8 +94,8 @@ export default function TenantUsersPage() {
             toast.success("User removed from organization");
             queryClient.invalidateQueries({ queryKey: ["tenantUsers", activeTenantId] });
         },
-        onError: (error: any) => {
-            toast.error(error.response?.data?.detail || "Failed to remove user");
+        onError: (error: unknown) => {
+            toast.error(getApiErrorMessage(error, "Failed to remove user"));
         },
     });
 
@@ -193,7 +188,7 @@ export default function TenantUsersPage() {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {users?.map((user: any) => (
+                            {users?.map((user) => (
                                 <TableRow key={user.id} className="group transition-colors">
                                     <TableCell>
                                         <div className="flex items-center gap-3">

@@ -2,7 +2,6 @@ import axios from "axios";
 import { useAuthStore } from "@/stores/auth-store";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "";
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "";
 
 export const apiClient = axios.create({
     baseURL: API_BASE_URL,

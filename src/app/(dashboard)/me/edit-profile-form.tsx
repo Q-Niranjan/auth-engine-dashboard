@@ -5,6 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api-client";
+import { getApiErrorMessage } from "@/lib/errors";
 import { useAuthStore } from "@/stores/auth-store";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
@@ -60,8 +61,8 @@ export function EditProfileForm({ onSuccess }: EditProfileFormProps) {
             toast.success("Profile updated successfully");
             onSuccess?.();
         },
-        onError: (error: any) => {
-            toast.error(error.response?.data?.detail || "Failed to update profile");
+        onError: (error: unknown) => {
+            toast.error(getApiErrorMessage(error, "Failed to update profile"));
         },
     });
 

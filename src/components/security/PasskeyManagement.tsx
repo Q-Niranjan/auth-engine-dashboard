@@ -2,9 +2,9 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api-client";
+import { getApiErrorMessage } from "@/lib/errors";
 import { toast } from "sonner";
 import {
-    KeyRound,
     Plus,
     Trash2,
     Loader2,
@@ -28,16 +28,24 @@ import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 
+interface WebAuthnCredential {
+    id: string;
+    device_name: string;
+    created_at: string;
+    last_used_at?: string | null;
+    is_backup?: boolean;
+}
+
 export default function PasskeyManagement() {
     const queryClient = useQueryClient();
     const [newDeviceName, setNewDeviceName] = useState("");
     const [isAdding, setIsAdding] = useState(false);
 
     // 1. Fetch credentials
-    const { data: creds, isLoading } = useQuery({
+    const { data: creds, isLoading } = useQuery<WebAuthnCredential[]>({
         queryKey: ["passkeys"],
         queryFn: async () => {
-            const { data } = await apiClient.get("/me/webauthn/credentials");
+            const { data } = await apiClient.get<{ credentials: WebAuthnCredential[] }>("/me/webauthn/credentials");
             return data.credentials;
         },
     });
@@ -71,9 +79,9 @@ export default function PasskeyManagement() {
             queryClient.invalidateQueries({ queryKey: ["passkeys"] });
             queryClient.invalidateQueries({ queryKey: ["verifyUser"] });
         },
-        onError: (error: any) => {
+        onError: (error: unknown) => {
             console.error(error);
-            toast.error(error.message || "Failed to register passkey. Try another browser or device.");
+            toast.error(getApiErrorMessage(error, "Failed to register passkey. Try another browser or device."));
         },
     });
 
@@ -86,8 +94,8 @@ export default function PasskeyManagement() {
             toast.success("Passkey removed");
             queryClient.invalidateQueries({ queryKey: ["passkeys"] });
         },
-        onError: (error: any) => {
-            toast.error("Failed to remove passkey");
+        onError: (error: unknown) => {
+            toast.error(getApiErrorMessage(error, "Failed to remove passkey"));
         },
     });
 
@@ -147,7 +155,7 @@ export default function PasskeyManagement() {
                         </div>
                     ) : (
                         <div className="space-y-3">
-                            {creds?.map((cred: any) => (
+                            {creds?.map((cred) => (
                                 <div
                                     key={cred.id}
                                     className="flex items-center justify-between p-4 rounded-xl border border-border bg-card transition-all hover:border-primary/20 hover:shadow-sm group"

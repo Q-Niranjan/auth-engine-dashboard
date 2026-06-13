@@ -2,6 +2,8 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api-client";
+import { getApiErrorMessage } from "@/lib/errors";
+import { ServiceKeyResponse } from "@/lib/types";
 import { useState } from "react";
 import {
     Key,
@@ -26,10 +28,6 @@ import {
 } from "@/components/ui/table";
 import {
     Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
 } from "@/components/ui/card";
 import {
     Dialog,
@@ -42,7 +40,6 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 
 export default function ServiceKeysPage() {
@@ -53,10 +50,10 @@ export default function ServiceKeysPage() {
     const [showKey, setShowKey] = useState(false);
 
     // Fetch service keys
-    const { data: keys, isLoading } = useQuery({
+    const { data: keys, isLoading } = useQuery<ServiceKeyResponse[]>({
         queryKey: ["serviceKeys"],
         queryFn: async () => {
-            const { data } = await apiClient.get("/auth/service-keys");
+            const { data } = await apiClient.get<ServiceKeyResponse[]>("/auth/service-keys");
             return data;
         },
     });
@@ -69,15 +66,15 @@ export default function ServiceKeysPage() {
             });
             return data;
         },
-        onSuccess: (data) => {
-            setNewlyCreatedKey(data.raw_key || data.key);
+        onSuccess: (data: ServiceKeyResponse) => {
+            setNewlyCreatedKey(data.raw_key || data.key_prefix);
             setShowKey(true);
             setDescription("");
             toast.success("Service key created! Copy it now — it won't be shown again.");
             queryClient.invalidateQueries({ queryKey: ["serviceKeys"] });
         },
-        onError: (error: any) => {
-            toast.error(error.response?.data?.detail || "Failed to create service key");
+        onError: (error: unknown) => {
+            toast.error(getApiErrorMessage(error, "Failed to create service key"));
         },
     });
 
@@ -90,8 +87,8 @@ export default function ServiceKeysPage() {
             toast.success("Service key revoked");
             queryClient.invalidateQueries({ queryKey: ["serviceKeys"] });
         },
-        onError: (error: any) => {
-            toast.error(error.response?.data?.detail || "Failed to revoke service key");
+        onError: (error: unknown) => {
+            toast.error(getApiErrorMessage(error, "Failed to revoke service key"));
         },
     });
 
@@ -224,7 +221,7 @@ export default function ServiceKeysPage() {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {keys.map((key: any) => (
+                            {keys.map((key) => (
                                 <TableRow key={key.id} className="group transition-colors">
                                     <TableCell>
                                         <div className="flex items-center gap-2">

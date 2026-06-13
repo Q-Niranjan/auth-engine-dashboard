@@ -3,6 +3,8 @@ import { useState } from "react";
 import { useAuthStore } from "@/stores/auth-store";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api-client";
+import { getApiErrorMessage } from "@/lib/errors";
+import { UserResponse } from "@/lib/types";
 import { format, parseISO, isValid } from "date-fns";
 import {
     ShieldAlert,
@@ -64,8 +66,8 @@ export default function MeProfilePage() {
         onSuccess: () => {
             toast.success("Verification email sent! Check your inbox.");
         },
-        onError: (error: any) => {
-            toast.error(error.response?.data?.detail || "Failed to send verification email");
+        onError: (error: unknown) => {
+            toast.error(getApiErrorMessage(error, "Failed to send verification email"));
         },
     });
 
@@ -81,8 +83,8 @@ export default function MeProfilePage() {
             toast.success("OTP sent to your phone.");
             setIsPhoneVerifyOpen(true);
         },
-        onError: (error: any) => {
-            toast.error(error.response?.data?.detail || "Failed to send OTP");
+        onError: (error: unknown) => {
+            toast.error(getApiErrorMessage(error, "Failed to send OTP"));
         },
     });
 
@@ -98,8 +100,8 @@ export default function MeProfilePage() {
             setPhoneOtp("");
             queryClient.invalidateQueries({ queryKey: ["verifyUser"] });
         },
-        onError: (error: any) => {
-            toast.error(error.response?.data?.detail || "Invalid or expired OTP");
+        onError: (error: unknown) => {
+            toast.error(getApiErrorMessage(error, "Invalid or expired OTP"));
         },
     });
 
@@ -320,7 +322,7 @@ export default function MeProfilePage() {
                         <CardContent className="p-0">
                             <div className="divide-y divide-muted/50">
                                 {user.roles && user.roles.length > 0 ? (
-                                    user.roles.map((roleAssignment: any, idx: number) => (
+                                    user.roles.map((roleAssignment: UserResponse["roles"][number], idx: number) => (
                                         <div key={idx} className="px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-muted/10 transition-colors">
                                             <div className="flex items-center gap-3">
                                                 <div className="p-2 rounded-lg bg-primary/10 text-primary shrink-0">

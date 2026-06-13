@@ -2,6 +2,8 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api-client";
+import { getApiErrorMessage } from "@/lib/errors";
+import { Role, UserResponse } from "@/lib/types";
 import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
 import {
@@ -9,13 +11,10 @@ import {
     Loader2,
     Mail,
     ShieldCheck,
-    ShieldAlert,
-    Smartphone,
     Calendar,
     Clock,
     Shield,
     Trash2,
-    UserX,
     UserCheck,
     Plus,
     X
@@ -61,20 +60,20 @@ export default function PlatformUserDetailPage() {
     const [selectedRole, setSelectedRole] = useState("");
 
     // Fetch user details
-    const { data: user, isLoading } = useQuery({
+    const { data: user, isLoading } = useQuery<UserResponse>({
         queryKey: ["platformUser", userId],
         queryFn: async () => {
-            const { data } = await apiClient.get(`/platform/users/${userId}`);
+            const { data } = await apiClient.get<UserResponse>(`/platform/users/${userId}`);
             return data;
         },
         enabled: !!userId,
     });
 
     // Fetch available platform roles
-    const { data: roles } = useQuery({
+    const { data: roles } = useQuery<Role[]>({
         queryKey: ["globalRoles"],
         queryFn: async () => {
-            const { data } = await apiClient.get("/platform/roles");
+            const { data } = await apiClient.get<Role[]>("/platform/roles");
             return data;
         },
     });
@@ -89,8 +88,8 @@ export default function PlatformUserDetailPage() {
             queryClient.invalidateQueries({ queryKey: ["platformUser", userId] });
             queryClient.invalidateQueries({ queryKey: ["allUsers"] });
         },
-        onError: (error: any) => {
-            toast.error(error.response?.data?.detail || "Failed to update user status");
+        onError: (error: unknown) => {
+            toast.error(getApiErrorMessage(error, "Failed to update user status"));
         },
     });
 
@@ -103,8 +102,8 @@ export default function PlatformUserDetailPage() {
             toast.success("User deleted successfully");
             router.push("/platform/users");
         },
-        onError: (error: any) => {
-            toast.error(error.response?.data?.detail || "Failed to delete user");
+        onError: (error: unknown) => {
+            toast.error(getApiErrorMessage(error, "Failed to delete user"));
         },
     });
 
@@ -119,8 +118,8 @@ export default function PlatformUserDetailPage() {
             setSelectedRole("");
             queryClient.invalidateQueries({ queryKey: ["platformUser", userId] });
         },
-        onError: (error: any) => {
-            toast.error(error.response?.data?.detail || "Failed to assign role");
+        onError: (error: unknown) => {
+            toast.error(getApiErrorMessage(error, "Failed to assign role"));
         },
     });
 
@@ -133,8 +132,8 @@ export default function PlatformUserDetailPage() {
             toast.success("Role removed");
             queryClient.invalidateQueries({ queryKey: ["platformUser", userId] });
         },
-        onError: (error: any) => {
-            toast.error(error.response?.data?.detail || "Failed to remove role");
+        onError: (error: unknown) => {
+            toast.error(getApiErrorMessage(error, "Failed to remove role"));
         },
     });
 
@@ -160,9 +159,9 @@ export default function PlatformUserDetailPage() {
     const statusOptions = ["ACTIVE", "INACTIVE", "SUSPENDED"];
 
     // Get user's platform roles
-    const userPlatformRoles = user.roles?.filter((r: any) => r.role?.scope === "PLATFORM") || [];
-    const assignedRoleNames = userPlatformRoles.map((r: any) => r.role?.name);
-    const availableRoles = roles?.filter((r: any) => !assignedRoleNames.includes(r.name)) || [];
+    const userPlatformRoles = user.roles?.filter((r) => r.role?.scope === "PLATFORM") || [];
+    const assignedRoleNames = userPlatformRoles.map((r) => r.role?.name);
+    const availableRoles = roles?.filter((r) => !assignedRoleNames.includes(r.name)) || [];
 
     return (
         <div className="space-y-6">
@@ -392,7 +391,7 @@ export default function PlatformUserDetailPage() {
                                             </p>
                                         ) : (
                                             <div className="space-y-2">
-                                                {availableRoles.map((role: any) => (
+                                                {availableRoles.map((role) => (
                                                     <button
                                                         key={role.id}
                                                         onClick={() => setSelectedRole(role.name)}
@@ -427,7 +426,7 @@ export default function PlatformUserDetailPage() {
                         {userPlatformRoles.length === 0 ? (
                             <p className="text-sm text-muted-foreground italic text-center py-6">No platform roles assigned.</p>
                         ) : (
-                            userPlatformRoles.map((ra: any, idx: number) => (
+                            userPlatformRoles.map((ra, idx: number) => (
                                 <div
                                     key={idx}
                                     className="flex items-center justify-between p-3 rounded-xl border border-muted bg-muted/10 group hover:border-primary/20 transition-all"
@@ -460,7 +459,7 @@ export default function PlatformUserDetailPage() {
                 </Card>
 
                 {/* All Roles (including tenant) */}
-                {user.roles && user.roles.filter((r: any) => r.role?.scope !== "PLATFORM").length > 0 && (
+                {user.roles && user.roles.filter((r) => r.role?.scope !== "PLATFORM").length > 0 && (
                     <Card className="lg:col-span-3 shadow-sm border-muted overflow-hidden">
                         <CardHeader className="bg-muted/30 pb-4">
                             <CardTitle>Tenant Roles</CardTitle>
@@ -469,8 +468,8 @@ export default function PlatformUserDetailPage() {
                         <CardContent className="pt-4">
                             <div className="divide-y divide-muted/50">
                                 {user.roles
-                                    .filter((r: any) => r.role?.scope !== "PLATFORM")
-                                    .map((ra: any, idx: number) => (
+                                    .filter((r) => r.role?.scope !== "PLATFORM")
+                                    .map((ra, idx: number) => (
                                         <div key={idx} className="py-3 flex items-center justify-between">
                                             <div className="flex items-center gap-3">
                                                 <Shield className="h-4 w-4 text-muted-foreground" />

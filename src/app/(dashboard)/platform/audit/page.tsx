@@ -2,12 +2,11 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api-client";
+import { AuditLogEntry } from "@/lib/types";
 import {
-    ScrollText,
     Search,
     Filter,
     Clock,
-    Shield,
     Activity,
     ArrowRight,
     Loader2
@@ -23,10 +22,6 @@ import {
 } from "@/components/ui/table";
 import {
     Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -34,10 +29,10 @@ import { Badge } from "@/components/ui/badge";
 
 export default function PlatformAuditPage() {
     // 1. Fetch Audit Logs
-    const { data: logs, isLoading } = useQuery({
+    const { data: logs, isLoading } = useQuery<AuditLogEntry[]>({
         queryKey: ["globalAudit"],
         queryFn: async () => {
-            const { data } = await apiClient.get("/platform/audit-logs");
+            const { data } = await apiClient.get<AuditLogEntry[]>("/platform/audit-logs");
             return data;
         },
     });
@@ -90,7 +85,7 @@ export default function PlatformAuditPage() {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {logs?.map((log: any) => (
+                            {logs?.map((log) => (
                                 <TableRow key={log.id} className="group transition-colors">
                                     <TableCell>
                                         <div className="space-y-1">

@@ -3,8 +3,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api-client";
 import { useAuthStore } from "@/stores/auth-store";
+import { LinkedOAuthAccount } from "@/lib/types";
 import { Loader2, Link2, Globe } from "lucide-react";
 import { FaGoogle, FaGithub, FaMicrosoft } from "react-icons/fa";
+import type { IconType } from "react-icons";
 
 import {
     Card,
@@ -15,7 +17,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
-const PROVIDER_ICONS: Record<string, any> = {
+const PROVIDER_ICONS: Record<string, IconType> = {
     google: FaGoogle,
     github: FaGithub,
     microsoft: FaMicrosoft,
@@ -30,10 +32,10 @@ const PROVIDER_COLORS: Record<string, string> = {
 export default function LinkedAccounts() {
     const { user } = useAuthStore();
 
-    const { data: linkedAccounts, isLoading } = useQuery({
+    const { data: linkedAccounts, isLoading } = useQuery<LinkedOAuthAccount[]>({
         queryKey: ["linkedOAuthAccounts"],
         queryFn: async () => {
-            const { data } = await apiClient.get("/auth/oauth/accounts");
+            const { data } = await apiClient.get<LinkedOAuthAccount[]>("/auth/oauth/accounts");
             return data;
         },
         enabled: !!user,
@@ -55,7 +57,7 @@ export default function LinkedAccounts() {
                     </div>
                 ) : linkedAccounts && linkedAccounts.length > 0 ? (
                     <div className="grid sm:grid-cols-2 gap-3">
-                        {linkedAccounts.map((account: any) => {
+                        {linkedAccounts.map((account) => {
                             const Icon = PROVIDER_ICONS[account.provider] || Globe;
                             const colorClass = PROVIDER_COLORS[account.provider] || "text-muted-foreground";
                             return (

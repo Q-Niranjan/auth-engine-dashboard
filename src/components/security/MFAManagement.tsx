@@ -1,9 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Image from "next/image";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import QRCode from "qrcode";
 import { apiClient } from "@/lib/api-client";
+import { getApiErrorMessage } from "@/lib/errors";
 import { toast } from "sonner";
 import {
     ShieldCheck,
@@ -17,7 +19,6 @@ import {
     Card,
     CardContent,
     CardDescription,
-    CardFooter,
     CardHeader,
     CardTitle,
 } from "@/components/ui/card";
@@ -68,8 +69,8 @@ export default function MFAManagement() {
             setEnrollData(data);
             setIsEnrolling(true);
         },
-        onError: (error: any) => {
-            toast.error(error.response?.data?.detail || "Failed to start MFA enrollment");
+        onError: (error: unknown) => {
+            toast.error(getApiErrorMessage(error, "Failed to start MFA enrollment"));
         },
     });
 
@@ -88,8 +89,8 @@ export default function MFAManagement() {
             queryClient.invalidateQueries({ queryKey: ["mfaStatus"] });
             queryClient.invalidateQueries({ queryKey: ["verifyUser"] });
         },
-        onError: (error: any) => {
-            toast.error(error.response?.data?.detail || "Invalid verification code");
+        onError: (error: unknown) => {
+            toast.error(getApiErrorMessage(error, "Invalid verification code"));
         },
     });
 
@@ -105,8 +106,8 @@ export default function MFAManagement() {
             queryClient.invalidateQueries({ queryKey: ["mfaStatus"] });
             queryClient.invalidateQueries({ queryKey: ["verifyUser"] });
         },
-        onError: (error: any) => {
-            toast.error(error.response?.data?.detail || "Failed to disable MFA. Check your code.");
+        onError: (error: unknown) => {
+            toast.error(getApiErrorMessage(error, "Failed to disable MFA. Check your code."));
         },
     });
 
@@ -191,10 +192,13 @@ export default function MFAManagement() {
 
                                     <div className="bg-white p-4 rounded-xl border-2 border-primary/20 inline-block">
                                         {qrCode && (
-                                            <img
+                                            <Image
                                                 src={qrCode}
                                                 alt="MFA QR Code"
+                                                width={192}
+                                                height={192}
                                                 className="w-48 h-48"
+                                                unoptimized
                                             />
                                         )}
                                     </div>

@@ -2,10 +2,11 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api-client";
+import { getApiErrorMessage } from "@/lib/errors";
+import { SocialProviderConfig } from "@/lib/types";
 import { useAuthStore } from "@/stores/auth-store";
 import {
     Globe,
-    Plus,
     Trash2,
     ShieldCheck,
     Loader2,
@@ -15,15 +16,14 @@ import {
     MoreVertical,
     PlusCircle,
     AlertTriangle,
-    Settings,
     Pencil
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 
 import {
     Card,
     CardContent,
     CardDescription,
-    CardFooter,
     CardHeader,
     CardTitle,
 } from "@/components/ui/card";
@@ -45,11 +45,33 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { useState } from "react";
 
-const PROVIDER_ICONS: Record<string, any> = {
+interface TenantSocialProvider extends SocialProviderConfig {
+    id: string;
+    redirect_uri?: string;
+    oidc_discovery_url?: string;
+    client_secret_prefix?: string;
+    is_active?: boolean;
+}
+
+interface SocialProviderCreateForm {
+    provider: string;
+    client_id: string;
+    client_secret: string;
+    redirect_uri: string;
+    oidc_discovery_url: string;
+}
+
+interface SocialProviderUpdateForm {
+    client_id: string;
+    client_secret?: string;
+    redirect_uri: string;
+    oidc_discovery_url: string;
+}
+
+const PROVIDER_ICONS: Record<string, LucideIcon> = {
     google: Chrome,
     github: Github,
     oidc: Globe,
@@ -60,9 +82,9 @@ export default function TenantSocialPage() {
     const { activeTenantId } = useAuthStore();
     const [isAdding, setIsAdding] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
-    const [editingProvider, setEditingProvider] = useState<any>(null);
+    const [editingProvider, setEditingProvider] = useState<TenantSocialProvider | null>(null);
 
-    const [newProvider, setNewProvider] = useState<any>({
+    const [newProvider, setNewProvider] = useState<SocialProviderCreateForm>({
         provider: "google",
         client_id: "",
         client_secret: "",
@@ -70,26 +92,24 @@ export default function TenantSocialPage() {
         oidc_discovery_url: ""
     });
 
-    const [editForm, setEditForm] = useState<any>({
+    const [editForm, setEditForm] = useState<SocialProviderUpdateForm>({
         client_id: "",
         client_secret: "",
         redirect_uri: "",
         oidc_discovery_url: ""
     });
 
-    // 1. Fetch Providers
-    const { data: providers, isLoading } = useQuery({
+    const { data: providers, isLoading } = useQuery<TenantSocialProvider[]>({
         queryKey: ["tenantSocialProviders", activeTenantId],
         queryFn: async () => {
-            const { data } = await apiClient.get(`/tenants/${activeTenantId}/social-providers`);
+            const { data } = await apiClient.get<TenantSocialProvider[]>(`/tenants/${activeTenantId}/social-providers`);
             return data;
         },
         enabled: !!activeTenantId,
     });
 
-    // 2. Create Provider
     const createMutation = useMutation({
-        mutationFn: async (payload: any) => {
+        mutationFn: async (payload: SocialProviderCreateForm) => {
             await apiClient.post(`/tenants/${activeTenantId}/social-providers`, payload);
         },
         onSuccess: () => {
@@ -98,14 +118,14 @@ export default function TenantSocialPage() {
             setNewProvider({ provider: "google", client_id: "", client_secret: "", redirect_uri: "", oidc_discovery_url: "" });
             queryClient.invalidateQueries({ queryKey: ["tenantSocialProviders", activeTenantId] });
         },
-        onError: (error: any) => {
-            toast.error(error.response?.data?.detail || "Failed to add social provider");
+        onError: (error: unknown) => {
+            toast.error(getApiErrorMessage(error, "Failed to add social provider"));
         }
     });
 
     // 3. Update Provider (PUT)
     const updateMutation = useMutation({
-        mutationFn: async ({ provider, payload }: { provider: string; payload: any }) => {
+        mutationFn: async ({ provider, payload }: { provider: string; payload: SocialProviderUpdateForm }) => {
             await apiClient.put(`/tenants/${activeTenantId}/social-providers/${provider}`, payload);
         },
         onSuccess: () => {
@@ -114,8 +134,8 @@ export default function TenantSocialPage() {
             setEditingProvider(null);
             queryClient.invalidateQueries({ queryKey: ["tenantSocialProviders", activeTenantId] });
         },
-        onError: (error: any) => {
-            toast.error(error.response?.data?.detail || "Failed to update social provider");
+        onError: (error: unknown) => {
+            toast.error(getApiErrorMessage(error, "Failed to update social provider"));
         }
     });
 
@@ -128,8 +148,8 @@ export default function TenantSocialPage() {
             toast.success("Social provider removed");
             queryClient.invalidateQueries({ queryKey: ["tenantSocialProviders", activeTenantId] });
         },
-        onError: (error: any) => {
-            toast.error(error.response?.data?.detail || "Failed to remove social provider");
+        onError: (error: unknown) => {
+            toast.error(getApiErrorMessage(error, "Failed to remove social provider"));
         }
     });
 
@@ -141,12 +161,12 @@ export default function TenantSocialPage() {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["tenantSocialProviders", activeTenantId] });
         },
-        onError: (error: any) => {
-            toast.error("Failed to toggle provider");
+        onError: (error: unknown) => {
+            toast.error(getApiErrorMessage(error, "Failed to toggle provider"));
         }
     });
 
-    const openEditDialog = (p: any) => {
+    const openEditDialog = (p: TenantSocialProvider) => {
         setEditingProvider(p);
         setEditForm({
             client_id: p.client_id || "",
@@ -312,9 +332,10 @@ export default function TenantSocialPage() {
                         <Button
                             onClick={() => {
                                 if (editingProvider) {
-                                    const payload = { ...editForm };
-                                    // Remove empty client_secret so backend keeps current
-                                    if (!payload.client_secret) delete payload.client_secret;
+                                    const { client_secret, ...rest } = editForm;
+                                    const payload: SocialProviderUpdateForm = client_secret
+                                        ? { ...rest, client_secret }
+                                        : rest;
                                     updateMutation.mutate({ provider: editingProvider.provider, payload });
                                 }
                             }}
@@ -351,7 +372,7 @@ export default function TenantSocialPage() {
                     </Card>
                 ) : (
                     <div className="space-y-4">
-                        {providers?.map((p: any) => {
+                        {providers?.map((p) => {
                             const Icon = PROVIDER_ICONS[p.provider] || Globe;
                             return (
                                 <Card key={p.id} className="shadow-sm border-muted hover:border-primary/20 transition-all overflow-hidden group">

@@ -2,12 +2,13 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api-client";
+import { getApiErrorMessage } from "@/lib/errors";
+import { Permission, Role } from "@/lib/types";
 import {
     Plus,
     Trash2,
     ShieldCheck,
     Loader2,
-    Lock,
     Edit,
     AlertCircle,
 } from "lucide-react";
@@ -29,11 +30,19 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
+interface RolePayload {
+    name: string;
+    description: string;
+    scope: string;
+    level: number;
+    permissions: string[];
+}
+
 export default function PlatformRolesPage() {
     const queryClient = useQueryClient();
 
     const [isDialogOpen, setIsDialogOpen] = useState(false);
-    const [editingRole, setEditingRole] = useState<any>(null);
+    const [editingRole, setEditingRole] = useState<Role | null>(null);
 
     // Form State
     const [formData, setFormData] = useState({
@@ -45,29 +54,29 @@ export default function PlatformRolesPage() {
     });
 
     // Fetches
-    const { data: roles = [], isLoading: isLoadingRoles } = useQuery({
+    const { data: roles = [], isLoading: isLoadingRoles } = useQuery<Role[]>({
         queryKey: ["globalRoles"],
         queryFn: async () => {
-            const { data } = await apiClient.get("/platform/roles");
+            const { data } = await apiClient.get<Role[]>("/platform/roles");
             return data;
         },
     });
 
-    const { data: permissions = [], isLoading: isLoadingPerms } = useQuery({
+    const { data: permissions = [], isLoading: isLoadingPerms } = useQuery<Permission[]>({
         queryKey: ["globalPermissions"],
         queryFn: async () => {
-            const { data } = await apiClient.get("/platform/roles/permissions");
+            const { data } = await apiClient.get<Permission[]>("/platform/roles/permissions");
             return data;
         },
     });
 
     // Derived
-    const platformRoles = roles.filter((r: any) => r.scope === "PLATFORM");
-    const tenantRoles = roles.filter((r: any) => r.scope === "TENANT");
+    const platformRoles = roles.filter((r) => r.scope === "PLATFORM");
+    const tenantRoles = roles.filter((r) => r.scope === "TENANT");
 
     // Filtered permissions based on tab/scope
     const availablePerms = useMemo(() => {
-        return permissions.filter((p: any) => {
+        return permissions.filter((p) => {
             if (p.name.startsWith("auth.")) return true;
             if (formData.scope === "PLATFORM" && p.name.startsWith("platform.")) return true;
             if (formData.scope === "TENANT" && p.name.startsWith("tenant.")) return true;
@@ -88,7 +97,7 @@ export default function PlatformRolesPage() {
         setIsDialogOpen(true);
     };
 
-    const handleOpenEdit = (role: any) => {
+    const handleOpenEdit = (role: Role) => {
         toast.info(`Editing role: ${role.name}`);
         setEditingRole(role);
         setFormData({
@@ -103,7 +112,7 @@ export default function PlatformRolesPage() {
 
     // Mutations
     const saveMutation = useMutation({
-        mutationFn: async (payload: any) => {
+        mutationFn: async (payload: RolePayload) => {
             if (editingRole) {
                 const { data } = await apiClient.put(`/platform/roles/${editingRole.id}`, payload);
                 return data;
@@ -117,8 +126,8 @@ export default function PlatformRolesPage() {
             queryClient.invalidateQueries({ queryKey: ["globalRoles"] });
             setIsDialogOpen(false);
         },
-        onError: (err: any) => {
-            toast.error(err.response?.data?.detail || "Failed to save role.");
+        onError: (err: unknown) => {
+            toast.error(getApiErrorMessage(err, "Failed to save role."));
         }
     });
 
@@ -130,8 +139,8 @@ export default function PlatformRolesPage() {
             toast.success("Role deleted!");
             queryClient.invalidateQueries({ queryKey: ["globalRoles"] });
         },
-        onError: (err: any) => {
-            toast.error(err.response?.data?.detail || "Failed to delete role.");
+        onError: (err: unknown) => {
+            toast.error(getApiErrorMessage(err, "Failed to delete role."));
         }
     });
 
@@ -157,7 +166,7 @@ export default function PlatformRolesPage() {
 
     const isSystemRole = (name: string) => ["SUPER_ADMIN", "PLATFORM_ADMIN", "TENANT_OWNER"].includes(name);
 
-    const renderRoleCard = (role: any) => (
+    const renderRoleCard = (role: Role) => (
         <Card key={role.id} className="shadow-sm border-muted flex flex-col h-full">
             <CardHeader className="pb-2 flex-none">
                 <div className="flex items-center justify-between">
@@ -186,7 +195,7 @@ export default function PlatformRolesPage() {
                         {!role.permissions?.length && (
                             <span className="text-xs text-muted-foreground italic">None assigned</span>
                         )}
-                        {role.permissions?.slice(0, 5).map((p: any) => (
+                        {role.permissions?.slice(0, 5).map((p) => (
                             <Badge key={p.id} variant="secondary" className="text-[9px] px-1.5 py-0 truncate max-w-full">
                                 {p.name}
                             </Badge>
@@ -302,7 +311,7 @@ export default function PlatformRolesPage() {
                                 value={formData.name}
                                 onChange={e => setFormData({ ...formData, name: e.target.value })}
                                 placeholder="e.g. EDITOR"
-                                disabled={editingRole && isSystemRole(editingRole.name)}
+                                disabled={!!editingRole && isSystemRole(editingRole.name)}
                                 className="uppercase"
                             />
                             {editingRole && isSystemRole(editingRole.name) && (
@@ -364,7 +373,7 @@ export default function PlatformRolesPage() {
                             </p>
 
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-[300px] overflow-y-auto p-1 bg-muted/20 rounded-lg">
-                                {availablePerms.map((p: any) => {
+                                {availablePerms.map((p) => {
                                     const checked = formData.permissions.includes(p.id);
                                     return (
                                         <label

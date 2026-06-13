@@ -10,6 +10,7 @@ import { Loader2, ArrowLeft, MailCheck } from "lucide-react";
 import Link from "next/link";
 
 import { apiClient } from "@/lib/api-client";
+import { getApiErrorMessage } from "@/lib/errors";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -57,10 +58,8 @@ export default function MagicLinkPage() {
             setIsSent(true);
             toast.success("Magic link sent!");
         },
-        onError: (error: any) => {
-            toast.error(
-                error.response?.data?.detail || "Failed to send magic link. Please try again."
-            );
+        onError: (error: unknown) => {
+            toast.error(getApiErrorMessage(error, "Failed to send magic link. Please try again."));
         },
     });
 
@@ -78,7 +77,7 @@ export default function MagicLinkPage() {
                         </div>
                         <CardTitle className="text-3xl font-bold tracking-tight">Check your email</CardTitle>
                         <CardDescription className="text-base">
-                            We've sent a magic link to <span className="font-semibold text-foreground">{sentEmail}</span>.
+                            We&apos;ve sent a magic link to <span className="font-semibold text-foreground">{sentEmail}</span>.
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="text-center text-sm text-muted-foreground">

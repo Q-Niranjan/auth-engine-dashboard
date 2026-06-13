@@ -79,7 +79,71 @@ export interface AuditLogEntry {
     ip_address?: string;
     user_agent?: string;
     created_at: string;
-    details?: Record<string, any>;
+    details?: Record<string, unknown>;
+}
+
+export interface Permission {
+    id: string;
+    name: string;
+    description?: string;
+}
+
+export interface Role {
+    id: string;
+    name: string;
+    description: string;
+    scope: string;
+    level: number;
+    created_at: string;
+    permissions: Permission[];
+    permission_ids: string[];
+}
+
+export interface TenantAuthConfig {
+    allowed_methods: string[];
+    mfa_required: boolean;
+    session_ttl_seconds: number;
+    allowed_domains: string[];
+    oidc_client_id?: string;
+}
+
+export interface EmailConfig {
+    provider: string;
+    from_email: string;
+    api_key?: string;
+    credential_hint?: string;
+    is_active: boolean;
+    platform_provider?: string;
+    platform_from_email?: string;
+}
+
+export interface EmailConfigForm {
+    provider: string;
+    from_email: string;
+    api_key: string;
+    is_active: boolean;
+}
+
+export interface SmsConfigForm {
+    provider: string;
+    from_number: string;
+    api_key: string;
+    is_active: boolean;
+}
+
+export interface OAuthProvider {
+    id: string;
+    name: string;
+    enabled: boolean;
+    client_id?: string;
+    client_secret?: string;
+}
+
+export interface SocialProviderConfig {
+    provider: string;
+    client_id: string;
+    client_secret: string;
+    is_enabled: boolean;
 }
 
 export interface SmsConfigResponse {

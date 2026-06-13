@@ -2,11 +2,11 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api-client";
+import { TenantAuthConfig, TenantResponse, UserResponse } from "@/lib/types";
 import { useAuthStore } from "@/stores/auth-store";
 import {
     Users,
     ShieldCheck,
-    Activity,
     UserPlus,
     ArrowUpRight,
     Clock,
@@ -28,35 +28,31 @@ export default function TenantDashboard() {
     const { activeTenantId } = useAuthStore();
 
     // 1. Fetch Tenant Details
-    const { data: tenant, isLoading: isLoadingTenant } = useQuery({
+    const { data: tenant } = useQuery<TenantResponse | null>({
         queryKey: ["tenantDetails", activeTenantId],
         queryFn: async () => {
             if (!activeTenantId) return null;
-            // Note: We don't have a direct /tenants/{id} for admins yet, 
-            // but we can find it in our list of tenants from /me/tenants.
-            const { data } = await apiClient.get("/me/tenants");
-            return data.find((t: any) => t.id === activeTenantId);
+            const { data } = await apiClient.get<TenantResponse[]>("/me/tenants");
+            return data.find((t) => t.id === activeTenantId) ?? null;
         },
         enabled: !!activeTenantId,
     });
 
-    // 2. Fetch Users count (limit 1 just to see total if API supported it, but we'll fetch all for now)
-    const { data: users, isLoading: isLoadingUsers } = useQuery({
+    const { data: users } = useQuery<UserResponse[]>({
         queryKey: ["tenantUsers", activeTenantId],
         queryFn: async () => {
             if (!activeTenantId) return [];
-            const { data } = await apiClient.get(`/tenants/${activeTenantId}/users`);
+            const { data } = await apiClient.get<UserResponse[]>(`/tenants/${activeTenantId}/users`);
             return data;
         },
         enabled: !!activeTenantId,
     });
 
-    // 3. Fetch Auth Config
-    const { data: authConfig, isLoading: isLoadingConfig } = useQuery({
+    const { data: authConfig } = useQuery<TenantAuthConfig | null>({
         queryKey: ["tenantAuthConfig", activeTenantId],
         queryFn: async () => {
             if (!activeTenantId) return null;
-            const { data } = await apiClient.get(`/tenants/${activeTenantId}/auth-config`);
+            const { data } = await apiClient.get<TenantAuthConfig>(`/tenants/${activeTenantId}/auth-config`);
             return data;
         },
         enabled: !!activeTenantId,
@@ -119,8 +115,8 @@ export default function TenantDashboard() {
                                     {m.replace('_', ' ')}
                                 </Badge>
                             ))}
-                            {(authConfig?.allowed_methods?.length > 2) && (
-                                <span className="text-[10px] text-muted-foreground">+{authConfig.allowed_methods.length - 2}</span>
+                            {(authConfig?.allowed_methods?.length ?? 0) > 2 && (
+                                <span className="text-[10px] text-muted-foreground">+{(authConfig?.allowed_methods?.length ?? 0) - 2}</span>
                             )}
                         </div>
                     </CardContent>
@@ -174,7 +170,7 @@ export default function TenantDashboard() {
                     </CardHeader>
                     <CardContent>
                         <div className="space-y-4">
-                            {users?.slice(0, 5).map((user: any) => (
+                            {users?.slice(0, 5).map((user) => (
                                 <div key={user.id} className="flex items-center justify-between border-b border-muted pb-3 last:border-0 last:pb-0">
                                     <div className="flex items-center gap-3">
                                         <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xs font-bold">

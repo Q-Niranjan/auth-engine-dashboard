@@ -13,6 +13,7 @@ import Link from "next/link";
 import { apiClient } from "@/lib/api-client";
 import { useAuthStore } from "@/stores/auth-store";
 import { AuthResponse } from "@/lib/types";
+import { getApiErrorMessage } from "@/lib/errors";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -76,10 +77,8 @@ export default function RegisterPage() {
             toast.success("Account created successfully!");
             router.push("/me");
         },
-        onError: (error: any) => {
-            toast.error(
-                error.response?.data?.detail || "Failed to create account. Please try again."
-            );
+        onError: (error: unknown) => {
+            toast.error(getApiErrorMessage(error, "Failed to create account. Please try again."));
         },
     });
 

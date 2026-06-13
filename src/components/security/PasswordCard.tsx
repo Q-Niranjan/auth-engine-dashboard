@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api-client";
+import { getApiErrorMessage } from "@/lib/errors";
 import { useAuthStore } from "@/stores/auth-store";
 import { toast } from "sonner";
 import { Lock, Loader2, Eye, EyeOff } from "lucide-react";
@@ -62,8 +63,8 @@ export default function PasswordCard() {
             resetFields();
             queryClient.invalidateQueries({ queryKey: ["verifyUser"] });
         },
-        onError: (error: any) => {
-            toast.error(error.response?.data?.detail || "Failed to set password");
+        onError: (error: unknown) => {
+            toast.error(getApiErrorMessage(error, "Failed to set password"));
         },
     });
 
@@ -79,8 +80,8 @@ export default function PasswordCard() {
             setIsChangePasswordOpen(false);
             resetFields();
         },
-        onError: (error: any) => {
-            toast.error(error.response?.data?.detail || "Failed to update password");
+        onError: (error: unknown) => {
+            toast.error(getApiErrorMessage(error, "Failed to update password"));
         },
     });
 

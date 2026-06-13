@@ -8,30 +8,21 @@ import { useQuery } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api-client";
 import { Loader2 } from "lucide-react";
 import { AuthResponse } from "@/lib/types";
+import { useIsClient } from "@/hooks/use-is-client";
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {
     const router = useRouter();
     const pathname = usePathname();
     const { accessToken, user, setUser, logout } = useAuthStore();
-    const [isMounting, setIsMounting] = useState(true);
-    const [hasHydrated, setHasHydrated] = useState(false);
+    const isClient = useIsClient();
+    const [hasHydrated, setHasHydrated] = useState(
+        () => useAuthStore.persist?.hasHydrated() ?? false
+    );
 
     useEffect(() => {
-        setIsMounting(false);
-
         const persistApi = useAuthStore.persist;
-        if (!persistApi) {
-            setHasHydrated(true);
-            return;
-        }
-
-        if (persistApi.hasHydrated()) {
-            setHasHydrated(true);
-        }
-
-        return persistApi.onFinishHydration(() => {
-            setHasHydrated(true);
-        });
+        if (!persistApi || persistApi.hasHydrated()) return;
+        return persistApi.onFinishHydration(() => setHasHydrated(true));
     }, []);
 
     const { isLoading: isVerifying } = useQuery({
@@ -51,21 +42,21 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
                 return null;
             }
         },
-        enabled: !!accessToken && !isMounting && hasHydrated,
+        enabled: !!accessToken && isClient && hasHydrated,
         retry: false,
         staleTime: 5 * 60 * 1000,
     });
 
     useEffect(() => {
-        if (!hasHydrated || isMounting || isVerifying) return;
+        if (!hasHydrated || !isClient || isVerifying) return;
 
         if (!accessToken) {
             const returnTo = encodeURIComponent(pathname);
             router.push(`/login?returnTo=${returnTo}`);
         }
-    }, [accessToken, hasHydrated, isMounting, isVerifying, pathname, router]);
+    }, [accessToken, hasHydrated, isClient, isVerifying, pathname, router]);
 
-    const waitingForAuth = isMounting || !hasHydrated;
+    const waitingForAuth = !isClient || !hasHydrated;
     const waitingForVerify = isVerifying && !user;
 
     if (waitingForAuth || waitingForVerify) {

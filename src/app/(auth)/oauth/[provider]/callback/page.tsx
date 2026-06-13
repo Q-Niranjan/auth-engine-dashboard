@@ -1,17 +1,17 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { Loader2, AlertCircle } from "lucide-react";
 import { useAuthStore } from "@/stores/auth-store";
 import { apiClient } from "@/lib/api-client";
+import { getApiErrorMessage } from "@/lib/errors";
 import { toast } from "sonner";
 import { use } from "react";
 
 import {
     Card,
-    CardContent,
     CardDescription,
     CardFooter,
     CardHeader,
@@ -37,7 +37,7 @@ export default function OAuthCallbackPage({ params }: OAuthCallbackParams) {
     const errorDescription = searchParams.get("error_description");
 
     const { setTokens, setUser } = useAuthStore();
-    const [isRedirecting, setIsRedirecting] = useState(false);
+    const handledRef = useRef(false);
 
     const { data, error, isPending } = useQuery({
         queryKey: ["oauthCallback", provider, code, state],
@@ -75,22 +75,20 @@ export default function OAuthCallbackPage({ params }: OAuthCallbackParams) {
     });
 
     useEffect(() => {
-        if (data && !isRedirecting) {
-            setIsRedirecting(true);
+        if (!data || handledRef.current) return;
+        handledRef.current = true;
 
-            setTokens(data.tokens.access_token, data.tokens.refresh_token);
-            setUser(data.user);
+        setTokens(data.tokens.access_token, data.tokens.refresh_token);
+        setUser(data.user);
 
-            if (data.isNewUser) {
-                toast.success("Account created successfully!");
-            } else {
-                toast.success("Successfully logged in!");
-            }
-
-            // Redirect rapidly to avoid flashing layout
-            router.push("/me");
+        if (data.isNewUser) {
+            toast.success("Account created successfully!");
+        } else {
+            toast.success("Successfully logged in!");
         }
-    }, [data, isRedirecting, router, setTokens, setUser]);
+
+        router.push("/me");
+    }, [data, router, setTokens, setUser]);
 
     // If no params and no error, this page shouldn't really be visited directly
     if (!code && !state && !errorParam) {
@@ -139,9 +137,10 @@ export default function OAuthCallbackPage({ params }: OAuthCallbackParams) {
                     <CardDescription className="mt-2 text-base">
                         {isPending && "Please wait while we securely log you in."}
                         {error &&
-                            ((error as any).response?.data?.detail ||
-                                error.message ||
-                                "Failed to authenticate with provider. Please try again.")}
+                            getApiErrorMessage(
+                                error,
+                                "Failed to authenticate with provider. Please try again."
+                            )}
                         {data && "You have been securely signed in. Redirecting..."}
                     </CardDescription>
                 </CardHeader>

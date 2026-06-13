@@ -4,30 +4,28 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api-client";
 import { useAuthStore } from "@/stores/auth-store";
 import {
-    Settings,
     ShieldCheck,
     Clock,
     Globe,
     Key,
     Save,
     Loader2,
-    AlertTriangle
 } from "lucide-react";
 
 import {
     Card,
     CardContent,
     CardDescription,
-    CardFooter,
     CardHeader,
     CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { TenantAuthConfig } from "@/lib/types";
+import { getApiErrorMessage } from "@/lib/errors";
 
 const AUTH_METHODS = [
     { id: "email_password", label: "Email / Password", description: "Standard login with password" },
@@ -36,44 +34,44 @@ const AUTH_METHODS = [
     { id: "oauth", label: "Social Login", description: "Google, GitHub, etc." },
 ];
 
-export default function TenantSettingsPage() {
+type SettingsFormData = {
+    allowed_methods: string[];
+    mfa_required: boolean;
+    session_ttl_seconds: number;
+    allowed_domains: string[];
+    oidc_client_id: string;
+};
+
+function buildFormData(config: TenantAuthConfig): SettingsFormData {
+    return {
+        allowed_methods: config.allowed_methods || [],
+        mfa_required: !!config.mfa_required,
+        session_ttl_seconds: config.session_ttl_seconds || 86400,
+        allowed_domains: config.allowed_domains || [],
+        oidc_client_id: config.oidc_client_id || "",
+    };
+}
+
+function TenantSettingsForm({
+    config,
+    activeTenantId,
+}: {
+    config: TenantAuthConfig;
+    activeTenantId: string;
+}) {
     const queryClient = useQueryClient();
-    const { activeTenantId } = useAuthStore();
-    const [formData, setFormData] = useState<any>(null);
+    const [formData, setFormData] = useState<SettingsFormData>(() => buildFormData(config));
 
-    // 1. Fetch Config
-    const { data: config, isLoading } = useQuery({
-        queryKey: ["tenantAuthConfig", activeTenantId],
-        queryFn: async () => {
-            const { data } = await apiClient.get(`/tenants/${activeTenantId}/auth-config`);
-            return data;
-        },
-        enabled: !!activeTenantId,
-    });
-
-    useEffect(() => {
-        if (config) {
-            setFormData({
-                allowed_methods: config.allowed_methods || [],
-                mfa_required: !!config.mfa_required,
-                session_ttl_seconds: config.session_ttl_seconds || 86400,
-                allowed_domains: config.allowed_domains || [],
-                oidc_client_id: config.oidc_client_id || "",
-            });
-        }
-    }, [config]);
-
-    // 2. Update Config
     const updateMutation = useMutation({
-        mutationFn: async (payload: any) => {
+        mutationFn: async (payload: SettingsFormData) => {
             await apiClient.put(`/tenants/${activeTenantId}/auth-config`, payload);
         },
         onSuccess: () => {
             toast.success("Settings updated successfully!");
             queryClient.invalidateQueries({ queryKey: ["tenantAuthConfig", activeTenantId] });
         },
-        onError: (error: any) => {
-            toast.error(error.response?.data?.detail || "Failed to update settings");
+        onError: (error: unknown) => {
+            toast.error(getApiErrorMessage(error, "Failed to update settings"));
         },
     });
 
@@ -84,7 +82,7 @@ export default function TenantSettingsPage() {
                 toast.warning("You must have at least one authentication method enabled.");
                 return;
             }
-            setFormData({ ...formData, allowed_methods: current.filter((m: string) => m !== methodId) });
+            setFormData({ ...formData, allowed_methods: current.filter((m) => m !== methodId) });
         } else {
             setFormData({ ...formData, allowed_methods: [...current, methodId] });
         }
@@ -93,9 +91,6 @@ export default function TenantSettingsPage() {
     const handleSave = () => {
         updateMutation.mutate(formData);
     };
-
-    if (!activeTenantId) return <div className="p-8 text-center text-muted-foreground">Select an organization.</div>;
-    if (isLoading || !formData) return <div className="p-20 flex justify-center"><Loader2 className="h-10 w-10 animate-spin text-primary" /></div>;
 
     return (
         <div className="space-y-8 pb-20 max-w-5xl">
@@ -107,7 +102,6 @@ export default function TenantSettingsPage() {
             </div>
 
             <div className="grid gap-6">
-                {/* Auth Methods */}
                 <Card className="shadow-sm border-muted">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
@@ -134,7 +128,6 @@ export default function TenantSettingsPage() {
                     </CardContent>
                 </Card>
 
-                {/* Security Policies */}
                 <Card className="shadow-sm border-muted">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
@@ -182,7 +175,7 @@ export default function TenantSettingsPage() {
                                 <Input
                                     placeholder="acme.com, corp.acme.com"
                                     value={formData.allowed_domains.join(", ")}
-                                    onChange={(e) => setFormData({ ...formData, allowed_domains: e.target.value.split(",").map(d => d.trim()).filter(Boolean) })}
+                                    onChange={(e) => setFormData({ ...formData, allowed_domains: e.target.value.split(",").map((d) => d.trim()).filter(Boolean) })}
                                 />
                             </div>
                         </div>
@@ -190,7 +183,6 @@ export default function TenantSettingsPage() {
                 </Card>
             </div>
 
-            {/* Floating Action Bar */}
             <div className="fixed bottom-8 left-1/2 -translate-x-1/2 md:translate-x-0 md:left-auto md:right-12 z-50">
                 <Button
                     size="lg"
@@ -208,4 +200,22 @@ export default function TenantSettingsPage() {
             </div>
         </div>
     );
+}
+
+export default function TenantSettingsPage() {
+    const { activeTenantId } = useAuthStore();
+
+    const { data: config, isLoading } = useQuery({
+        queryKey: ["tenantAuthConfig", activeTenantId],
+        queryFn: async () => {
+            const { data } = await apiClient.get<TenantAuthConfig>(`/tenants/${activeTenantId}/auth-config`);
+            return data;
+        },
+        enabled: !!activeTenantId,
+    });
+
+    if (!activeTenantId) return <div className="p-8 text-center text-muted-foreground">Select an organization.</div>;
+    if (isLoading || !config) return <div className="p-20 flex justify-center"><Loader2 className="h-10 w-10 animate-spin text-primary" /></div>;
+
+    return <TenantSettingsForm key={activeTenantId} config={config} activeTenantId={activeTenantId} />;
 }

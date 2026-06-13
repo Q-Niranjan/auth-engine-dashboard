@@ -2,11 +2,12 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api-client";
+import { getApiErrorMessage } from "@/lib/errors";
+import { TenantResponse, UserResponse } from "@/lib/types";
 import {
     Globe,
     Check,
     ChevronsUpDown,
-    User,
     Plus,
     Search,
     MoreVertical,
@@ -14,7 +15,6 @@ import {
     Loader2,
     Trash2,
     Pencil,
-    Eye
 } from "lucide-react";
 
 import {
@@ -27,10 +27,6 @@ import {
 } from "@/components/ui/table";
 import {
     Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
 } from "@/components/ui/card";
 import {
     DropdownMenu,
@@ -53,17 +49,27 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { useState, useEffect } from "react";
-import { cn } from "@/lib/utils";
-import Link from "next/link";
+import { useState } from "react";
+
+interface TenantListItem extends TenantResponse {
+    created_at?: string;
+    owner?: Pick<UserResponse, "id" | "email" | "first_name" | "last_name">;
+}
+
+interface TenantPayload {
+    name: string;
+    description: string;
+    type: string;
+    owner_id: string;
+}
 
 export default function PlatformTenantsPage() {
     const queryClient = useQueryClient();
     const [isAdding, setIsAdding] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
-    const [editingTenant, setEditingTenant] = useState<any>(null);
-    const [deletingTenant, setDeletingTenant] = useState<any>(null);
+    const [editingTenant, setEditingTenant] = useState<TenantListItem | null>(null);
+    const [deletingTenant, setDeletingTenant] = useState<TenantListItem | null>(null);
     const [searchTerm, setSearchTerm] = useState("");
 
     const [newTenant, setNewTenant] = useState({
@@ -79,53 +85,53 @@ export default function PlatformTenantsPage() {
         owner_id: ""
     });
     const [userSearch, setUserSearch] = useState("");
-    const [selectedUser, setSelectedUser] = useState<any>(null);
+    const [selectedUser, setSelectedUser] = useState<UserResponse | null>(null);
     const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
 
     // Edit user selection state
     const [editUserSearch, setEditUserSearch] = useState("");
-    const [editSelectedUser, setEditSelectedUser] = useState<any>(null);
+    const [editSelectedUser, setEditSelectedUser] = useState<UserResponse | null>(null);
     const [isEditUserDropdownOpen, setIsEditUserDropdownOpen] = useState(false);
 
     // 1. Fetch Tenants
-    const { data: tenants, isLoading } = useQuery({
+    const { data: tenants, isLoading } = useQuery<TenantListItem[]>({
         queryKey: ["allTenants"],
         queryFn: async () => {
-            const { data } = await apiClient.get("/platform/tenants");
+            const { data } = await apiClient.get<TenantListItem[]>("/platform/tenants");
             return data;
         },
     });
 
     // 2. Fetch Users for owner selection
-    const { data: users } = useQuery({
+    const { data: users } = useQuery<UserResponse[]>({
         queryKey: ["platformUsers"],
         queryFn: async () => {
-            const { data } = await apiClient.get("/platform/users");
+            const { data } = await apiClient.get<UserResponse[]>("/platform/users");
             return data;
         },
     });
 
-    const filteredUsers = users?.filter((u: any) =>
+    const filteredUsers = users?.filter((u) =>
         u.email.toLowerCase().includes(userSearch.toLowerCase()) ||
         `${u.first_name} ${u.last_name}`.toLowerCase().includes(userSearch.toLowerCase()) ||
         u.username?.toLowerCase().includes(userSearch.toLowerCase())
     );
 
-    const editFilteredUsers = users?.filter((u: any) =>
+    const editFilteredUsers = users?.filter((u) =>
         u.email.toLowerCase().includes(editUserSearch.toLowerCase()) ||
         `${u.first_name} ${u.last_name}`.toLowerCase().includes(editUserSearch.toLowerCase()) ||
         u.username?.toLowerCase().includes(editUserSearch.toLowerCase())
     );
 
     // Filter tenants by search
-    const filteredTenants = tenants?.filter((t: any) =>
+    const filteredTenants = tenants?.filter((t) =>
         t.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         t.id.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     // 3. Create Tenant
     const createMutation = useMutation({
-        mutationFn: async (payload: any) => {
+        mutationFn: async (payload: TenantPayload) => {
             await apiClient.post("/platform/tenants", payload);
         },
         onSuccess: () => {
@@ -136,14 +142,14 @@ export default function PlatformTenantsPage() {
             setUserSearch("");
             queryClient.invalidateQueries({ queryKey: ["allTenants"] });
         },
-        onError: (error: any) => {
-            toast.error(error.response?.data?.detail || "Failed to create organization");
+        onError: (error: unknown) => {
+            toast.error(getApiErrorMessage(error, "Failed to create organization"));
         }
     });
 
     // 4. Update Tenant
     const updateMutation = useMutation({
-        mutationFn: async ({ id, payload }: { id: string; payload: any }) => {
+        mutationFn: async ({ id, payload }: { id: string; payload: TenantPayload }) => {
             await apiClient.put(`/platform/tenants/${id}`, payload);
         },
         onSuccess: () => {
@@ -152,8 +158,8 @@ export default function PlatformTenantsPage() {
             setEditingTenant(null);
             queryClient.invalidateQueries({ queryKey: ["allTenants"] });
         },
-        onError: (error: any) => {
-            toast.error(error.response?.data?.detail || "Failed to update organization");
+        onError: (error: unknown) => {
+            toast.error(getApiErrorMessage(error, "Failed to update organization"));
         }
     });
 
@@ -168,12 +174,12 @@ export default function PlatformTenantsPage() {
             setDeletingTenant(null);
             queryClient.invalidateQueries({ queryKey: ["allTenants"] });
         },
-        onError: (error: any) => {
-            toast.error(error.response?.data?.detail || "Failed to delete organization");
+        onError: (error: unknown) => {
+            toast.error(getApiErrorMessage(error, "Failed to delete organization"));
         }
     });
 
-    const openEditDialog = (tenant: any) => {
+    const openEditDialog = (tenant: TenantListItem) => {
         setEditingTenant(tenant);
         setEditForm({
             name: tenant.name,
@@ -181,12 +187,12 @@ export default function PlatformTenantsPage() {
             type: tenant.type,
             owner_id: tenant.owner_id || ""
         });
-        const owner = users?.find((u: any) => u.id === tenant.owner_id);
+        const owner = users?.find((u) => u.id === tenant.owner_id);
         setEditSelectedUser(owner || null);
         setIsEditing(true);
     };
 
-    const openDeleteDialog = (tenant: any) => {
+    const openDeleteDialog = (tenant: TenantListItem) => {
         setDeletingTenant(tenant);
         setIsDeleting(true);
     };
@@ -271,7 +277,7 @@ export default function PlatformTenantsPage() {
                                             </div>
                                         </div>
                                         <div className="max-h-[240px] overflow-y-auto p-1">
-                                            {filteredUsers?.map((user: any) => (
+                                            {filteredUsers?.map((user) => (
                                                 <DropdownMenuItem
                                                     key={user.id}
                                                     onSelect={() => {
@@ -388,7 +394,7 @@ export default function PlatformTenantsPage() {
                                         </div>
                                     </div>
                                     <div className="max-h-[240px] overflow-y-auto p-1">
-                                        {editFilteredUsers?.map((user: any) => (
+                                        {editFilteredUsers?.map((user) => (
                                             <DropdownMenuItem
                                                 key={user.id}
                                                 onSelect={() => {
@@ -481,7 +487,7 @@ export default function PlatformTenantsPage() {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {filteredTenants?.map((t: any) => (
+                            {filteredTenants?.map((t) => (
                                 <TableRow key={t.id} className="group transition-colors">
                                     <TableCell>
                                         <div className="flex items-center gap-3">
@@ -506,7 +512,7 @@ export default function PlatformTenantsPage() {
                                         </div>
                                     </TableCell>
                                     <TableCell className="text-muted-foreground text-xs font-medium">
-                                        {new Date(t.created_at).toLocaleDateString()}
+                                        {t.created_at ? new Date(t.created_at).toLocaleDateString() : "—"}
                                     </TableCell>
                                     <TableCell>
                                         <Badge variant="default" className="bg-emerald-500 hover:bg-emerald-600 text-[10px] h-5">

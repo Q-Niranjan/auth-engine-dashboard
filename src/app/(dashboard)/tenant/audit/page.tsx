@@ -2,13 +2,12 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api-client";
+import { AuditLogEntry } from "@/lib/types";
 import { useAuthStore } from "@/stores/auth-store";
 import {
-    ScrollText,
     Search,
     Filter,
     Clock,
-    Shield,
     Activity,
     ArrowRight,
     Loader2
@@ -24,10 +23,6 @@ import {
 } from "@/components/ui/table";
 import {
     Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -39,10 +34,10 @@ export default function TenantAuditPage() {
     const [searchTerm, setSearchTerm] = useState("");
 
     // Fetch Tenant Audit Logs
-    const { data: logs, isLoading } = useQuery({
+    const { data: logs, isLoading } = useQuery<AuditLogEntry[]>({
         queryKey: ["tenantAudit", activeTenantId],
         queryFn: async () => {
-            const { data } = await apiClient.get(`/tenants/${activeTenantId}/audit-logs`);
+            const { data } = await apiClient.get<AuditLogEntry[]>(`/tenants/${activeTenantId}/audit-logs`);
             return data;
         },
         enabled: !!activeTenantId,
@@ -57,7 +52,7 @@ export default function TenantAuditPage() {
 
     if (!activeTenantId) return <div className="p-8 text-center">Select an organization.</div>;
 
-    const filteredLogs = logs?.filter((log: any) =>
+    const filteredLogs = logs?.filter((log) =>
         log.action?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         log.actor_id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         log.ip_address?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -109,7 +104,7 @@ export default function TenantAuditPage() {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {filteredLogs?.map((log: any) => (
+                            {filteredLogs?.map((log) => (
                                 <TableRow key={log.id} className="group transition-colors">
                                     <TableCell>
                                         <div className="space-y-1">
